@@ -8,7 +8,7 @@ import google.generativeai as genai
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # Ahora puedes hacer consultas a la API
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 response = model.generate_content("Hola, ¿quién eres?")
 st.write(response.text)
