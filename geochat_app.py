@@ -4,6 +4,9 @@ import pandas as pd
 import streamlit as st
 import google.generativeai as genai
 
+# Configura la página antes de cualquier otro componente
+st.set_page_config(page_title="Char de Geomecánica", layout="wide")
+
 # Configura la API key desde los secretos
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
@@ -12,8 +15,6 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 
 response = model.generate_content("Hola, ¿quién eres?")
 st.write(response.text)
-
-st.set_page_config(page_title="Char de Geomecánica", layout="wide")
 st.title("📊 Asistente de Geomecánica con Gemini")
 
 # 1. Cargar archivo CSV o XLSX
