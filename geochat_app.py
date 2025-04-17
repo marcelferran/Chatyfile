@@ -14,8 +14,15 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # Ahora puedes hacer consultas a la API
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-response = model.generate_content("Hola, ¿quién eres?")
-st.write(response.text)
+try:
+    response = model.generate_content("Hola, ¿quién eres?")
+    if response and hasattr(response, 'text'):
+        st.write(response.text)
+    else:
+        st.error("Error: No se recibió respuesta válida.")
+except Exception as e:
+    st.error(f"❌ Error al generar contenido: {str(e)}")
+
 st.title("📊 Chat de Geomecanica")
 
 # 1. Cargar archivo CSV o XLSX
@@ -63,11 +70,11 @@ if uploaded_file:
 
         pregunta = st.text_input("✏️ Escribe tu pregunta sobre los datos (escribe 'salir' para terminar):")
 
-        if pregunta:
-            if pregunta.lower() == "salir":
-                st.warning("👋 Programa finalizado.")
-            else:
-                prompt = f"""
+if pregunta:
+    if pregunta.lower() == "salir":
+        st.warning("👋 Programa finalizado.")
+    else:
+        prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
@@ -77,29 +84,26 @@ Responde a esta pregunta escribiendo solamente el código Python que da la respu
 Pregunta:
 {pregunta}
 """
+        try:
+            response = chat.send_message(prompt)
+            code = response.text.strip("`python\n").strip("`").strip()
+
+            # Ejecutar código generado
+            exec_globals = {"df": df}
+            buffer = io.StringIO()
+
+            with contextlib.redirect_stdout(buffer):
                 try:
-                    response = chat.send_message(prompt)
-                    code = response.text.strip("`python\n").strip("`").strip()
-
-                    # Ejecutar código generado
-                    exec_globals = {"df": df}
-                    buffer = io.StringIO()
-
-                    with contextlib.redirect_stdout(buffer):
-                        try:
-                            exec(code, exec_globals)
-                        except Exception as e:
-                            st.error(f"❌ Error al ejecutar el código: {str(e)}")
-
-                    output = buffer.getvalue()
-
-                    if output.strip():
-                        st.success("💬 Respuesta del asistente:")
-                        st.code(output)
-                    else:
-                        st.info("✅ Código ejecutado sin salida.")
+                    exec(code, exec_globals)
                 except Exception as e:
-                    st.error(f"❌ Error al procesar la pregunta: {str(e)}")
+                    st.error(f"❌ Error al ejecutar el código: {str(e)}")
 
-    except Exception as e:
-        st.error(f"❌ Error al leer el archivo: {str(e)}")
+            output = buffer.getvalue()
+
+            if output.strip():
+                st.success("💬 Respuesta del asistente:")
+                st.code(output)
+            else:
+                st.info("✅ Código ejecutado sin salida.")
+        except Exception as e:
+            st.error(f"❌ Error al procesar la pregunta: {str(e)}")
