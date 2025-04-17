@@ -2,23 +2,19 @@ import io
 import contextlib
 import pandas as pd
 import streamlit as st
-import matplotlib.pyplot as plt
 import plotly.express as px
+import matplotlib.pyplot as plt
 import google.generativeai as genai
 
-# Configura la página antes de cualquier otro componente
+# Configura la página
 st.set_page_config(page_title="ComprasGPT", layout="wide")
-
-# Mostrar el título en la página
 st.title("📊 ComprasGPT")
 
-# Configura la API key desde los secretos
+# Configura la API key
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-
-# Ahora puedes hacer consultas a la API
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# 1. Cargar archivo CSV o XLSX
+# Cargar archivo
 uploaded_file = st.file_uploader("Carga tu archivo (.csv o .xlsx)", type=["csv", "xls", "xlsx"])
 
 if uploaded_file:
@@ -28,11 +24,11 @@ if uploaded_file:
         else:
             df = pd.read_excel(uploaded_file)
 
-        # 2. Mostrar resumen
+        # Mostrar resumen
         st.success("✅ Archivo cargado correctamente")
         st.write(f"**Filas:** {df.shape[0]} | **Columnas:** {df.shape[1]}")
 
-        # 3. Mostrar tabla resumen de columnas
+        # Resumen de columnas
         summary = pd.DataFrame({
             "Columna": df.columns,
             "Tipo de dato": df.dtypes.values,
@@ -41,14 +37,14 @@ if uploaded_file:
         st.subheader("📋 Resumen de columnas")
         st.dataframe(summary)
 
-        # 4. Mostrar sample
+        # Muestra de datos
         st.subheader("🔍 Muestra de 10 filas")
         st.dataframe(df.sample(10))
 
-        # 5. Asistente interactivo
+        # Asistente interactivo
         st.subheader("🤖 Pregunta al asistente sobre tu DataFrame")
 
-        # Iniciar modelo Gemini
+        # Iniciar chat con Gemini
         chat = model.start_chat(history=[
             {
                 "role": "user",
@@ -71,7 +67,9 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Responde a esta pregunta escribiendo **código Python** que imprima una respuesta clara y amigable para el usuario.
+La respuesta debe ser un texto legible, no solo valores crudos como tuplas o tipos numéricos.
+Usa `print()` para mostrar la respuesta de forma descriptiva.
 
 Pregunta:
 {pregunta}
@@ -81,7 +79,7 @@ Pregunta:
                     code = response.text.strip("`python\n").strip("`").strip()
 
                     # Ejecutar código generado
-                    exec_globals = {"df": df}
+                    exec_globals = {"df": df, "plt": plt, "px": px}
                     buffer = io.StringIO()
 
                     with contextlib.redirect_stdout(buffer):
@@ -92,25 +90,30 @@ Pregunta:
 
                     output = buffer.getvalue()
 
-                    # Verifica si el código tiene salida y genera gráficos
+                    # Mostrar salida de texto si existe
                     if output.strip():
                         st.success("💬 Respuesta del asistente:")
                         st.code(output)
 
-                        # Si el código genera un gráfico, se muestra aquí
-                        if "plt" in output or "plotly" in output:
-                            # Intentamos detectar si el código genera un gráfico de Matplotlib o Plotly
-                            if "plt" in output:
-                                # Si es un gráfico de Matplotlib, lo mostramos
-                                fig = plt.figure()
+                    # Detectar y mostrar gráficos
+                    if "plt" in code or "plotly" in code:
+                        try:
+                            if "plt" in code:
+                                plt.figure()
                                 exec(code, exec_globals)
-                                st.pyplot(fig)
-                            elif "plotly" in output:
-                                # Si es un gráfico de Plotly, lo mostramos
-                                fig = exec(code, exec_globals)
-                                st.plotly_chart(fig)
+                                st.pyplot(plt.gcf())
+                                plt.close()
+                            elif "plotly" in code:
+                                exec_globals["fig"] = None
+                                exec(code, exec_globals)
+                                if exec_globals.get("fig") is not None:
+                                    st.plotly_chart(exec_globals["fig"])
+                                else:
+                                    st.warning("⚠️ No se generó un gráfico de Plotly válido.")
+                        except Exception as e:
+                            st.error(f"❌ Error al generar el gráfico: {str(e)}")
                     else:
-                        st.info("✅ Código ejecutado sin salida.")
+                        st.info("✅ Código ejecutado sin gráficos.")
                 except Exception as e:
                     st.error(f"❌ Error al procesar la pregunta: {str(e)}")
     except Exception as e:
