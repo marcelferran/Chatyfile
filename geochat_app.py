@@ -2,6 +2,7 @@ import io
 import contextlib
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 import google.generativeai as genai
 
 # Configura la página antes de cualquier otro componente
