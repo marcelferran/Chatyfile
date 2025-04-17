@@ -3,6 +3,7 @@ import contextlib
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import plotly.express as px
 import google.generativeai as genai
 
 # Configura la página antes de cualquier otro componente
@@ -13,17 +14,6 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # Ahora puedes hacer consultas a la API
 model = genai.GenerativeModel('gemini-2.0-flash')
-
-try:
-    response = model.generate_content("Hola, ¿quién eres?")
-    if response and hasattr(response, 'text'):
-        st.write(response.text)
-    else:
-        st.error("Error: No se recibió respuesta válida.")
-except Exception as e:
-    st.error(f"❌ Error al generar contenido: {str(e)}")
-
-st.title("📊 Chat de Geomecanica")
 
 # 1. Cargar archivo CSV o XLSX
 uploaded_file = st.file_uploader("Carga tu archivo (.csv o .xlsx)", type=["csv", "xls", "xlsx"])
@@ -99,9 +89,23 @@ Pregunta:
 
                     output = buffer.getvalue()
 
+                    # Verifica si el código tiene salida y genera gráficos
                     if output.strip():
                         st.success("💬 Respuesta del asistente:")
                         st.code(output)
+
+                        # Si el código genera un gráfico, se muestra aquí
+                        if "plt" in output or "plotly" in output:
+                            # Intentamos detectar si el código genera un gráfico de Matplotlib o Plotly
+                            if "plt" in output:
+                                # Si es un gráfico de Matplotlib, lo mostramos
+                                fig = plt.figure()
+                                exec(code, exec_globals)
+                                st.pyplot(fig)
+                            elif "plotly" in output:
+                                # Si es un gráfico de Plotly, lo mostramos
+                                fig = exec(code, exec_globals)
+                                st.plotly_chart(fig)
                     else:
                         st.info("✅ Código ejecutado sin salida.")
                 except Exception as e:
