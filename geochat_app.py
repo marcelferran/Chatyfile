@@ -16,7 +16,7 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 
 response = model.generate_content("Hola, ¿quién eres?")
 st.write(response.text)
-st.title("📊 Asistente de Geomecánica con Gemini")
+st.title("📊 Chat de Geomecanica")
 
 # 1. Cargar archivo CSV o XLSX
 uploaded_file = st.file_uploader("Carga tu archivo (.csv o .xlsx)", type=["csv", "xls", "xlsx"])
@@ -43,7 +43,7 @@ if uploaded_file:
 
         # 4. Mostrar sample
         st.subheader("🔍 Muestra de 10 filas")
-        st.dataframe(df.head(10))
+        st.dataframe(df.sample(10))
 
         # 5. Asistente interactivo
         st.subheader("🤖 Pregunta al asistente sobre tu DataFrame")
