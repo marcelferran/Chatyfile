@@ -9,6 +9,9 @@ import google.generativeai as genai
 # Configura la página antes de cualquier otro componente
 st.set_page_config(page_title="Chat de Geomecánica", layout="wide")
 
+# Mostrar el título en la página
+st.title("📊 Chat de Geomecánica")
+
 # Configura la API key desde los secretos
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
