@@ -3,10 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import io
 from contextlib import redirect_stdout
+import google.generativeai as genai
 
-st.set_page_config(page_title="Gemini Chatbot", layout="centered")
-st.title("🤖 Gemini Data Analyst")
+st.set_page_config(page_title="ComprasGPT", layout="centered")
+st.title("🤖 ComprasGPT")
 st.caption("Prototipo desarrollado por Marcel F. Castro")
+
+# Configura la API key
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Inicializar estado de sesión
 if "messages" not in st.session_state:
@@ -60,19 +65,12 @@ if prompt:
         # Contexto básico para el modelo
         context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español."
 
-        from openai import OpenAI
-        client = OpenAI()
+        response = model.generate_content([
+            context,
+            prompt
+        ])
 
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": context},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.2
-        )
-
-        code = response.choices[0].message.content
+        code = response.text
 
         # Mostrar respuesta como código
         with st.chat_message("assistant"):
