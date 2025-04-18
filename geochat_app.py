@@ -8,6 +8,22 @@ import contextlib
 st.set_page_config(page_title="ComprasGPT", layout="wide")
 st.title("📊 ComprasGPT")
 
+# Estilo CSS para mejorar la presentación de tablas
+st.markdown("""
+    <style>
+    .dataframe th, .dataframe td {
+        white-space: normal !important;
+        word-wrap: break-word;
+        max-width: 300px;
+        text-align: left;
+    }
+    .dataframe th {
+        background-color: #f0f2f6;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Configura la API key
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.0-flash')
@@ -60,7 +76,7 @@ if st.session_state.df is not None:
     st.header("2. Resumen del DataFrame")
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Número de filas", df.shape[0])
+        st.metric("Número de filas", f"{df.shape[0]:,}")
     with col2:
         st.metric("Número de columnas", df.shape[1])
     
@@ -85,6 +101,7 @@ if st.session_state.df is not None:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("is_dataframe", False):
+                st.markdown("📊 **Resultado**:")
                 st.dataframe(message["content"], use_container_width=True)
             else:
                 st.markdown(message["content"])
@@ -112,9 +129,15 @@ if st.session_state.df is not None:
                 Estas son las columnas reales: {', '.join(df.columns)}.
                 NO CAMBIES los nombres de las columnas.
 
-                Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-                Si la pregunta pide una tabla o un ranking (como un top 10), devuelve un DataFrame con columnas claras y nombres descriptivos.
-                Por ejemplo, para un top 10 de proveedores por número de órdenes de compra, usa nombres como 'Proveedor' y 'Número de Órdenes'.
+                Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
+                - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
+                - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
+                - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
+                - Si la pregunta no requiere una tabla, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
+
+                Ejemplo:
+                Pregunta: "Dame una tabla con el top 10 de proveedores por número de orden de compra"
+                Código: df['Proveedor'].value_counts().head(10).reset_index().rename(columns={{'index': 'Proveedor', 'Proveedor': 'Número de Órdenes'}})
 
                 Pregunta:
                 {pregunta}
@@ -128,20 +151,25 @@ if st.session_state.df is not None:
                 
                 with contextlib.redirect_stdout(buffer):
                     try:
-                        # Ejecutar el código y capturar el resultado
-                        result = eval(code, exec_globals) if 'print' not in code else exec(code, exec_globals)
-                    except Exception as e:
-                        st.error(f"❌ Error al ejecutar el código: {str(e)}")
-                        st.session_state.messages.append({"role": "assistant", "content": f"❌ Error al ejecutar el código: {str(e)}"})
-                        st.rerun()
+                        # Intentar evaluar el código como expresión; si falla, ejecutarlo
+                        result = eval(code, exec_globals)
+                    except:
+                        # Si eval falla, ejecutar el código (para casos con print o asignaciones)
+                        exec(code, exec_globals)
+                        result = None
                 
                 output = buffer.getvalue()
                 
                 # Mostrar la respuesta
                 with st.chat_message("assistant"):
                     if isinstance(result, pd.DataFrame):
-                        st.markdown(f"📊 **Resultado**:")
-                        st.dataframe(result, use_container_width=True)
+                        st.markdown("📊 **Resultado**:")
+                        # Formatear números en el DataFrame para mejor legibilidad
+                        formatted_df = result.copy()
+                        for col in formatted_df.columns:
+                            if formatted_df[col].dtype in ['int64', 'float64']:
+                                formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
+                        st.dataframe(formatted_df, use_container_width=True)
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": result,
@@ -152,6 +180,12 @@ if st.session_state.df is not None:
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": output
+                        })
+                    elif result is not None:
+                        st.markdown(f"💬 **Resultado**: {result}")
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": str(result)
                         })
                     else:
                         st.markdown("✅ Código ejecutado sin salida.")
