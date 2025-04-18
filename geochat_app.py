@@ -8,7 +8,7 @@ import seaborn as sns
 import copy
 
 # Configura la página
-st.set_page_config(page_title="ComprasGPT", layout="center") # o usar wide
+st.set_page_config(page_title="ComprasGPT", layout="wide") # o usar wide
 st.title("📊 ComprasGPT")
 
 # Estilo CSS para mejorar la presentación de tablas
