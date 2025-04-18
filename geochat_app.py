@@ -11,30 +11,18 @@ import copy
 st.set_page_config(page_title="ComprasGPT", layout="wide")
 st.title("📊 ComprasGPT")
 
-# Estilo CSS para mejorar la presentación de tablas y gráficos
+# Estilo CSS para mejorar la presentación de tablas
 st.markdown("""
     <style>
     .dataframe th, .dataframe td {
         white-space: normal !important;
         word-wrap: break-word;
-        max-width: 200px;
+        max-width: 300px;
         text-align: left;
     }
     .dataframe th {
         background-color: #f0f2f6;
         font-weight: bold;
-    }
-    /* Limitar tamaño de las tablas */
-    .stDataFrame {
-        max-width: 600px !important;
-        max-height: 300px !important;
-        overflow: auto;
-    }
-    /* Limitar tamaño de los gráficos */
-    .stPlotlyChart, .element-container img {
-        max-width: 600px !important;
-        max-height: 300px !important;
-        object-fit: contain;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -102,11 +90,11 @@ if st.session_state.df is not None:
         'Tipo de dato': [str(dtype) for dtype in df.dtypes],
         'Valores nulos': [df[col].isna().sum() for col in df.columns]
     })
-    st.dataframe(column_info, use_container_width=False)
+    st.dataframe(column_info, use_container_width=True, hide_index=True)
     
     # 4. Muestra de 10 filas
     st.header("4. Muestra de 10 filas")
-    st.dataframe(df.head(10), use_container_width=False)
+    st.dataframe(df.head(10), use_container_width=True)
     
     # 5. Sección de preguntas
     st.header("5. Haz tus preguntas")
@@ -123,7 +111,7 @@ if st.session_state.df is not None:
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
-                st.dataframe(message["content"], use_container_width=False)
+                st.dataframe(message["content"], use_container_width=True)
             elif message["role"] == "assistant" and message.get("is_plot", False):
                 st.markdown("📈 **Gráfico**:")
                 st.pyplot(message["content"])
@@ -156,7 +144,7 @@ if st.session_state.df is not None:
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
                 - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
                 - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
-                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico con `plt.figure(figsize=(8, 4))` para un tamaño compacto, y muestra el gráfico en Streamlit with `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
                 - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
                 - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
@@ -170,7 +158,7 @@ if st.session_state.df is not None:
                 import matplotlib.pyplot as plt
                 import seaborn as sns
                 top_5 = df['Proveedor'].value_counts().head(5)
-                plt.figure(figsize=(8, 4))
+                plt.figure(figsize=(10, 6))
                 sns.barplot(x=top_5.values, y=top_5.index)
                 plt.xlabel('Número de Órdenes')
                 plt.ylabel('Proveedor')
@@ -214,7 +202,7 @@ if st.session_state.df is not None:
                         for col in formatted_df.columns:
                             if formatted_df[col].dtype in ['int64', 'float64']:
                                 formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
-                        st.dataframe(formatted_df, use_container_width=False)
+                        st.dataframe(formatted_df, use_container_width=True)
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": result,
