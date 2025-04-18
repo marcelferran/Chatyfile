@@ -8,7 +8,7 @@ import seaborn as sns
 import copy
 
 # Configura la página
-st.set_page_config(page_title="ComprasGPT", layout="wide") # o usar wide
+st.set_page_config(page_title="ComprasGPT", layout="wide")
 st.title("📊 ComprasGPT")
 
 # Estilo CSS para mejorar la presentación de tablas
@@ -101,9 +101,9 @@ if st.session_state.df is not None:
     st.write("Escribe tu pregunta sobre el DataFrame. Escribe 'salir' para limpiar el chat.")
     st.markdown("""
         **Ejemplos de preguntas:**
+        - Cuántas órdenes de compra hay en total?
         - Dame una tabla con el top 10 de proveedores por número de orden de compra
         - Muestra un gráfico de barras del top 5 de proveedores por número de órdenes
-        - Cuántas órdenes de compra hay en total
     """)
 
     # Mostrar historial de mensajes
@@ -170,9 +170,6 @@ if st.session_state.df is not None:
                 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("`python\n").strip("`").strip()
-                
-                # Mostrar el código generado para depuración
-                st.write(f"**Debug: Código generado**:\n```python\n{code}\n```")
                 
                 # Ejecutar el código
                 exec_globals = {
