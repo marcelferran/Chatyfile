@@ -5,9 +5,9 @@ import io
 from contextlib import redirect_stdout
 import google.generativeai as genai
 
-st.set_page_config(page_title="Gemini Chatbot", layout="wide")
-st.title("🤖 Gemini Data Analyst")
-st.caption("Prototipo desarrollado por Marcel F. Castro")
+st.set_page_config(page_title="ComprasGPT", layout="wide")
+st.title("🤖 ComprasGPT")
+st.caption("Prototipo desarrollado por Marcel F. Castro Ponce de Leon")
 
 # Configura la API key
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
