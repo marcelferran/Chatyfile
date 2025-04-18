@@ -85,8 +85,6 @@ Pregunta:
             response = st.session_state.chat.send_message(full_prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
-            st.chat_message("assistant").markdown(f"```python\n{code}\n```")
-
             # Ejecutar código
             exec_globals = {"df": st.session_state.df, "pd": pd, "plt": plt}
             buffer = io.StringIO()
