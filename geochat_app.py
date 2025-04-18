@@ -6,8 +6,8 @@ from contextlib import redirect_stdout
 import google.generativeai as genai
 import re
 
-st.set_page_config(page_title="Compras-GPT", layout="wide")
-st.title("🤖 Compras-GPT")
+st.set_page_config(page_title="Gemini Data Analyst", layout="wide")
+st.title("🤖 Gemini Data Analyst")
 st.caption("Prototipo desarrollado por Marcel F. Castro")
 
 # Configura la API key
@@ -85,21 +85,23 @@ Respuesta: [respuesta clara y directa sin código]
 No incluyas encabezados innecesarios ni envoltorios de Markdown.
 """
 
-        # Limpiar el código generado
+        # Generar respuesta del modelo
         response = model.generate_content([
             context,
             prompt
         ])
 
-        # Filtrar el código generado solo si está entre ```python ... ```
+        # Obtener el código de la respuesta generada (si es un bloque Python)
         code_blocks = re.findall(r"```python(.*?)```", response.text, re.DOTALL)
         code = code_blocks[0].strip() if code_blocks else response.text.strip()
 
-        # Ejecutar código
+        # Validar si el código generado es adecuado y ejecutar si es válido
         try:
             output = io.StringIO()
             with redirect_stdout(output):
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "st": st}
+                
+                # Asegurarse de que el código no contenga errores de sintaxis
                 exec(code, exec_globals)
                 result = exec_globals.get("result", None)
 
