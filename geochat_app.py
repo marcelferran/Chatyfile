@@ -3,6 +3,10 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Configura la página
 st.set_page_config(page_title="ComprasGPT", layout="wide")
@@ -96,6 +100,12 @@ if st.session_state.df is not None:
     # 5. Sección de preguntas
     st.header("5. Haz tus preguntas")
     st.write("Escribe tu pregunta sobre el DataFrame. Escribe 'salir' para limpiar el chat.")
+    st.markdown("""
+        **Ejemplos de preguntas:**
+        - Dame una tabla con el top 10 de proveedores por número de orden de compra
+        - Muestra un gráfico de barras del top 5 de proveedores por número de órdenes
+        - Cuántas órdenes de compra hay en total
+    """)
 
     # Mostrar historial de mensajes
     for message in st.session_state.messages:
@@ -103,6 +113,9 @@ if st.session_state.df is not None:
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
                 st.dataframe(message["content"], use_container_width=True)
+            elif message["role"] == "assistant" and message.get("is_plot", False):
+                st.markdown("📈 **Gráfico**:")
+                st.pyplot(message["content"])
             else:
                 st.markdown(message["content"])
     
@@ -132,12 +145,27 @@ if st.session_state.df is not None:
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
                 - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
                 - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn y termina el código con `st.pyplot(plt.gcf())` para mostrar el gráfico en Streamlit. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns) y limpiar la figura con `plt.clf()` después.
                 - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
-                - Si la pregunta no requiere una tabla, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
+                - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
-                Ejemplo:
+                Ejemplo 1:
                 Pregunta: "Dame una tabla con el top 10 de proveedores por número de orden de compra"
                 Código: df['Proveedor'].value_counts().head(10).reset_index().rename(columns={{'index': 'Proveedor', 'Proveedor': 'Número de Órdenes'}})
+
+                Ejemplo 2:
+                Pregunta: "Muestra un gráfico de barras del top 5 de proveedores por número de órdenes"
+                Código: 
+                import matplotlib.pyplot as plt
+                import seaborn as sns
+                top_5 = df['Proveedor'].value_counts().head(5)
+                plt.figure(figsize=(10, 6))
+                sns.barplot(x=top_5.values, y=top_5.index)
+                plt.xlabel('Número de Órdenes')
+                plt.ylabel('Proveedor')
+                plt.title('Top 5 Proveedores por Número de Órdenes')
+                st.pyplot(plt.gcf())
+                plt.clf()
 
                 Pregunta:
                 {pregunta}
@@ -146,7 +174,15 @@ if st.session_state.df is not None:
                 code = response.text.strip("`python\n").strip("`").strip()
                 
                 # Ejecutar el código
-                exec_globals = {"df": df, "pd": pd}
+                exec_globals = {
+                    "df": df,
+                    "pd": pd,
+                    "plt": plt,
+                    "sns": sns,
+                    "st": st,
+                    "px": px,
+                    "go": go
+                }
                 buffer = io.StringIO()
                 
                 with contextlib.redirect_stdout(buffer):
@@ -154,7 +190,7 @@ if st.session_state.df is not None:
                         # Intentar evaluar el código como expresión; si falla, ejecutarlo
                         result = eval(code, exec_globals)
                     except:
-                        # Si eval falla, ejecutar el código (para casos con print o asignaciones)
+                        # Si eval falla, ejecutar el código (para plots or print statements)
                         exec(code, exec_globals)
                         result = None
                 
@@ -175,6 +211,15 @@ if st.session_state.df is not None:
                             "content": result,
                             "is_dataframe": True
                         })
+                    elif 'st.pyplot' in code:
+                        # El gráfico ya se mostró en el código ejecutado
+                        st.markdown("📈 **Gráfico**:")
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": plt.gcf(),
+                            "is_plot": True
+                        })
+                        plt.clf()  # Limpiar la figura después de almacenarla
                     elif output.strip():
                         st.markdown(f"💬 **Resultado**:\n\n{output}")
                         st.session_state.messages.append({
