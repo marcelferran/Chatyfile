@@ -95,14 +95,18 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
         code_blocks = re.findall(r"```python(.*?)```", response.text, re.DOTALL)
         code = code_blocks[0].strip() if code_blocks else response.text.strip()
 
-        # Validar si el código generado es adecuado y ejecutar si es válido
+        # Limpiar el código generado y asegurarse de que no haya sintaxis extraña
+        code = code.replace("```", "").strip()
+
         try:
+            # Verificar que el código no tenga errores de sintaxis
+            compiled_code = compile(code, "<string>", "exec")
+
+            # Ejecutar el código solo si no tiene errores de sintaxis
             output = io.StringIO()
             with redirect_stdout(output):
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "st": st}
-                
-                # Asegurarse de que el código no contenga errores de sintaxis
-                exec(code, exec_globals)
+                exec(compiled_code, exec_globals)
                 result = exec_globals.get("result", None)
 
             with st.chat_message("assistant"):
@@ -153,6 +157,12 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
                 else:
                     st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
 
+        except SyntaxError as e:
+            st.error(f"❌ Error de sintaxis en el código generado: {e}")
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"❌ Error de sintaxis en el código generado: {e}"
+            })
         except Exception as e:
             st.error(f"❌ Error al ejecutar el código: {e}")
             st.session_state.messages.append({
