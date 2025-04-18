@@ -26,14 +26,14 @@ st.markdown("""
     }
     /* Limitar tamaño de las tablas */
     .stDataFrame {
-        max-width: 1500px !important;
+        max-width: 1600px !important;
         max-height: 300px !important;
         overflow: auto;
     }
     /* Limitar tamaño de los gráficos */
     .stPlotlyChart, .element-container img {
-        max-width: 1500px !important;
-        max-height: 500px !important;
+        max-width: 1600px !important;
+        max-height: 600px !important;
         object-fit: contain;
     }
     </style>
