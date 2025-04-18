@@ -17,7 +17,7 @@ st.markdown("""
     .dataframe th, .dataframe td {
         white-space: normal !important;
         word-wrap: break-word;
-        max-width: 250px;
+        max-width: 300px;
         text-align: left;
     }
     .dataframe th {
@@ -26,14 +26,14 @@ st.markdown("""
     }
     /* Limitar tamaño de las tablas */
     .stDataFrame {
-        max-width: 1000px !important;
+        max-width: 1500px !important;
         max-height: 300px !important;
         overflow: auto;
     }
     /* Limitar tamaño de los gráficos */
     .stPlotlyChart, .element-container img {
-        max-width: 1000px !important;
-        max-height: 300px !important;
+        max-width: 1500px !important;
+        max-height: 500px !important;
         object-fit: contain;
     }
     </style>
