@@ -106,8 +106,8 @@ if st.session_state.df is not None:
         - Cuántas órdenes de compra hay en total
     """)
 
-    # Mostrar historial de mensajes
-    for message in st.session_state.messages:
+    # Mostrar historial de mensajes (excluyendo el mensaje actual)
+    for message in st.session_state.messages[:-1]:  # Excluir el último mensaje
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
@@ -209,8 +209,9 @@ if st.session_state.df is not None:
                             "is_dataframe": True
                         })
                     elif 'st.pyplot' in code:
+                        # El gráfico ya se mostró en el código ejecutado; solo agregar header
                         st.markdown("📈 **Gráfico**:")
-                        # El gráfico ya se mostró en el código ejecutado; almacenar para el historial
+                        # Almacenar para el historial
                         fig = copy.deepcopy(plt.gcf())
                         st.session_state.messages.append({
                             "role": "assistant",
