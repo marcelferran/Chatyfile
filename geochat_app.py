@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import io
 from contextlib import redirect_stdout
 import google.generativeai as genai
-import re
 
 st.set_page_config(page_title="Gemini Data Analyst", layout="wide")
 st.title("🤖 Gemini Data Analyst")
@@ -25,15 +24,15 @@ if "df" not in st.session_state:
 uploaded_file = st.sidebar.file_uploader("📁 **Carga un archivo CSV o Excel**", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    # Limpiar el historial de mensajes al cargar un nuevo archivo
-    st.session_state.messages.clear()
-
     if uploaded_file.name.endswith(".csv"):
         st.session_state.df = pd.read_csv(uploaded_file)
     else:
         st.session_state.df = pd.read_excel(uploaded_file)
 
     df = st.session_state.df
+
+    # Convertir columnas de tipo 'object' a 'string' para evitar problemas de compatibilidad con Arrow
+    df = df.applymap(lambda x: str(x) if isinstance(x, object) else x)
 
     # Mostrar información básica del archivo cargado
     st.chat_message("assistant").markdown("📊 **Datos cargados:**")
@@ -54,7 +53,7 @@ if uploaded_file is not None:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         if msg.get("is_dataframe"):
-            st.dataframe(msg["content"], use_container_width=True)
+            st.dataframe(msg["content"], use_container_width=False)
         elif msg.get("is_plot"):
             st.pyplot(msg["content"])
         else:
@@ -72,41 +71,21 @@ if prompt:
         df = st.session_state.df
 
         # Contexto básico para el modelo
-        context = f"""
-Este es un DataFrame de pandas llamado df con columnas: {', '.join(df.columns)}.
-Responde siempre en español, de forma clara y breve.
-No incluyas ningún bloque de código ni explicación adicional.
-Si haces un gráfico, solo genera el gráfico.
-Si das un resultado numérico o una tabla, responde como:
+        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español y entrega solo la respuesta final, clara y directa."
 
-Pregunta: [la pregunta original]  
-Respuesta: [respuesta clara y directa sin código]
-
-No incluyas encabezados innecesarios ni envoltorios de Markdown.
-"""
-
-        # Generar respuesta del modelo
         response = model.generate_content([
             context,
             prompt
         ])
 
-        # Obtener el código de la respuesta generada (si es un bloque Python)
-        code_blocks = re.findall(r"```python(.*?)```", response.text, re.DOTALL)
-        code = code_blocks[0].strip() if code_blocks else response.text.strip()
+        code = response.text
 
-        # Limpiar el código generado y asegurarse de que no haya sintaxis extraña
-        code = code.replace("```", "").strip()
-
+        # Ejecutar código
         try:
-            # Verificar que el código no tenga errores de sintaxis
-            compiled_code = compile(code, "<string>", "exec")
-
-            # Ejecutar el código solo si no tiene errores de sintaxis
             output = io.StringIO()
             with redirect_stdout(output):
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "st": st}
-                exec(compiled_code, exec_globals)
+                exec(code, exec_globals)
                 result = exec_globals.get("result", None)
 
             with st.chat_message("assistant"):
@@ -115,7 +94,7 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
                     for col in formatted_df.columns:
                         if formatted_df[col].dtype in ['int64', 'float64']:
                             formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
-                    st.dataframe(formatted_df, use_container_width=True)
+                    st.dataframe(formatted_df, use_container_width=False)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": result,
@@ -123,7 +102,7 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
                     })
 
                 elif isinstance(result, pd.Series):
-                    st.dataframe(result.to_frame(), use_container_width=True)
+                    st.dataframe(result.to_frame(), use_container_width=False)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": result.to_frame(),
@@ -132,7 +111,7 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
 
                 elif isinstance(result, (list, dict)):
                     df_result = pd.DataFrame(result)
-                    st.dataframe(df_result, use_container_width=True)
+                    st.dataframe(df_result, use_container_width=False)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": df_result,
@@ -157,12 +136,6 @@ No incluyas encabezados innecesarios ni envoltorios de Markdown.
                 else:
                     st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
 
-        except SyntaxError as e:
-            st.error(f"❌ Error de sintaxis en el código generado: {e}")
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": f"❌ Error de sintaxis en el código generado: {e}"
-            })
         except Exception as e:
             st.error(f"❌ Error al ejecutar el código: {e}")
             st.session_state.messages.append({
