@@ -5,9 +5,10 @@ import io
 import contextlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+import copy
 
 # Configura la página
-st.set_page_config(page_title="ComprasGPT", layout="wide")
+st.set_page_config(page_title="ComprasGPT", layout="center") # o usar wide
 st.title("📊 ComprasGPT")
 
 # Estilo CSS para mejorar la presentación de tablas
@@ -143,7 +144,7 @@ if st.session_state.df is not None:
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
                 - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
                 - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
-                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show() ni plt.clf() en el código.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
                 - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
                 - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
@@ -212,12 +213,16 @@ if st.session_state.df is not None:
                         })
                     elif 'st.pyplot' in code:
                         st.markdown("📈 **Gráfico**:")
-                        # El gráfico ya se mostró en el código ejecutado
+                        # Copiar la figura para almacenarla sin que se borre
+                        fig = copy.deepcopy(plt.gcf())
+                        st.pyplot(fig)
                         st.session_state.messages.append({
                             "role": "assistant",
-                            "content": plt.gcf(),
+                            "content": fig,
                             "is_plot": True
                         })
+                        # Limpiar la figura después de mostrar y almacenar
+                        plt.clf()
                     elif output.strip():
                         st.markdown(f"💬 **Resultado**:\n\n{output}")
                         st.session_state.messages.append({
@@ -237,16 +242,14 @@ if st.session_state.df is not None:
                             "content": "✅ Código ejecutado sin salida."
                         })
                 
-                # Limpiar la figura después de mostrarla
-                plt.clf()
-                
             except Exception as e:
                 with st.chat_message("assistant"):
                     st.error(f"❌ Error al procesar o ejecutar: {str(e)}")
                 st.session_state.messages.append({"role": "assistant", "content": f"❌ Error al procesar o ejecutar: {str(e)}"})
         
-        # Actualizar la interfaz
-        st.rerun()
+        # Actualizar la interfaz solo si no es un gráfico
+        if 'st.pyplot' not in code:
+            st.rerun()
 
 else:
     st.info("Por favor, carga un archivo para comenzar.")
