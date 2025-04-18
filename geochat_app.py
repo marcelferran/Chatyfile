@@ -3,7 +3,6 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
-import uuid
 
 # Configura la página
 st.set_page_config(page_title="ComprasGPT", layout="wide")
@@ -59,17 +58,20 @@ if st.session_state.df is not None:
     
     # 2. Resumen de filas y columnas
     st.header("2. Resumen del DataFrame")
-    st.write(f"**Número de filas:** {df.shape[0]}")
-    st.write(f"**Número de columnas:** {df.shape[1]}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Número de filas", df.shape[0])
+    with col2:
+        st.metric("Número de columnas", df.shape[1])
     
     # 3. Tabla con información de columnas
     st.header("3. Detalles de las columnas")
     column_info = pd.DataFrame({
-        'Nombre de la columna': df.columns,
+        'Columna': df.columns,
         'Tipo de dato': [str(dtype) for dtype in df.dtypes],
         'Valores nulos': [df[col].isna().sum() for col in df.columns]
     })
-    st.dataframe(column_info, use_container_width=True)
+    st.dataframe(column_info, use_container_width=True, hide_index=True)
     
     # 4. Muestra de 10 filas
     st.header("4. Muestra de 10 filas")
@@ -82,7 +84,10 @@ if st.session_state.df is not None:
     # Mostrar historial de mensajes
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            if message["role"] == "assistant" and message.get("is_dataframe", False):
+                st.dataframe(message["content"], use_container_width=True)
+            else:
+                st.markdown(message["content"])
     
     # Entrada de la pregunta
     pregunta = st.chat_input("🤔 Tu pregunta:")
@@ -108,6 +113,8 @@ if st.session_state.df is not None:
                 NO CAMBIES los nombres de las columnas.
 
                 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+                Si la pregunta pide una tabla o un ranking (como un top 10), devuelve un DataFrame con columnas claras y nombres descriptivos.
+                Por ejemplo, para un top 10 de proveedores por número de órdenes de compra, usa nombres como 'Proveedor' y 'Número de Órdenes'.
 
                 Pregunta:
                 {pregunta}
@@ -116,12 +123,13 @@ if st.session_state.df is not None:
                 code = response.text.strip("`python\n").strip("`").strip()
                 
                 # Ejecutar el código
-                exec_globals = {"df": df}
+                exec_globals = {"df": df, "pd": pd}
                 buffer = io.StringIO()
                 
                 with contextlib.redirect_stdout(buffer):
                     try:
-                        exec(code, exec_globals)
+                        # Ejecutar el código y capturar el resultado
+                        result = eval(code, exec_globals) if 'print' not in code else exec(code, exec_globals)
                     except Exception as e:
                         st.error(f"❌ Error al ejecutar el código: {str(e)}")
                         st.session_state.messages.append({"role": "assistant", "content": f"❌ Error al ejecutar el código: {str(e)}"})
@@ -131,13 +139,26 @@ if st.session_state.df is not None:
                 
                 # Mostrar la respuesta
                 with st.chat_message("assistant"):
-                    if output.strip():
-                        st.markdown(f"💬 Respuesta:\n\n{output}")
+                    if isinstance(result, pd.DataFrame):
+                        st.markdown(f"📊 **Resultado**:")
+                        st.dataframe(result, use_container_width=True)
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": result,
+                            "is_dataframe": True
+                        })
+                    elif output.strip():
+                        st.markdown(f"💬 **Resultado**:\n\n{output}")
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": output
+                        })
                     else:
                         st.markdown("✅ Código ejecutado sin salida.")
-                
-                # Agregar la respuesta al historial
-                st.session_state.messages.append({"role": "assistant", "content": output if output.strip() else "✅ Código ejecutado sin salida."})
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": "✅ Código ejecutado sin salida."
+                        })
                 
             except Exception as e:
                 with st.chat_message("assistant"):
