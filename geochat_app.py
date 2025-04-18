@@ -243,7 +243,7 @@ if st.session_state.df is not None:
                         # Limpiar la figura después de almacenar
                         plt.clf()
                     elif output.strip():
-                        st.markdown(f"💬 **Resultado**:\n\n{output W
+                        st.markdown(f"💬 **Resultado**:\n\n{output}")
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": output
