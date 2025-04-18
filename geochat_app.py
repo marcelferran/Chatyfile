@@ -5,122 +5,139 @@ import io
 from contextlib import redirect_stdout
 import google.generativeai as genai
 
-st.set_page_config(page_title="ComprasGPT", layout="centered")
-st.title("🤖 ComprasGPT")
+st.set_page_config(page_title="Gemini Chatbot", layout="wide")
+st.title("🤖 Gemini Data Analyst")
 st.caption("Prototipo desarrollado por Marcel F. Castro")
 
-# Configura la API key de Gemini
+# Configura la API key
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# Inicializar sesión
+# Inicializar estado de sesión
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 if "df" not in st.session_state:
     st.session_state.df = None
 
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[
-        {
-            "role": "user",
-            "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: "]
-        },
-        {
-            "role": "model",
-            "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
-        }
-    ])
-
-# Subir archivo
-uploaded_file = st.sidebar.file_uploader("📁 Carga un archivo CSV o Excel", type=["csv", "xlsx"])
+# Subida de archivo en el sidebar
+uploaded_file = st.sidebar.file_uploader("📁 **Carga un archivo CSV o Excel**", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
+    if uploaded_file.name.endswith(".csv"):
+        st.session_state.df = pd.read_csv(uploaded_file)
+    else:
+        st.session_state.df = pd.read_excel(uploaded_file)
+
+    df = st.session_state.df
+
+    # Mostrar información básica del archivo cargado
+    st.chat_message("assistant").markdown("📊 **Datos cargados:**")
+    st.chat_message("assistant").markdown(f"🔢 **Filas:** {df.shape[0]} | 📁 **Columnas:** {df.shape[1]}")
+
+    st.chat_message("assistant").markdown("🧾 **Resumen de columnas:**")
+    resumen_columnas = pd.DataFrame({
+        "Nombre": df.columns,
+        "Tipo de dato": [df[col].dtype for col in df.columns],
+        "¿Tiene nulos?": ["Sí" if df[col].isnull().any() else "No" for col in df.columns]
+    })
+    st.chat_message("assistant").dataframe(resumen_columnas)
+
+    st.chat_message("assistant").markdown("🔍 **Vista previa aleatoria (10 filas):**")
+    st.chat_message("assistant").dataframe(df.sample(10))
+
+# Mostrar historial de mensajes
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        if msg.get("is_dataframe"):
+            st.dataframe(msg["content"], use_container_width=False)
+        elif msg.get("is_plot"):
+            st.pyplot(msg["content"])
         else:
-            df = pd.read_excel(uploaded_file)
+            st.markdown(msg["content"])
 
-        st.session_state.df = df
+# Entrada del usuario
+prompt = st.chat_input("Escribe tu mensaje o pregunta aquí...")
 
-        st.subheader("📊 Información del archivo")
+if prompt:
+    # Mostrar mensaje del usuario
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-        st.markdown(f"🔢 **Filas:** {df.shape[0]}  \n📁 **Columnas:** {df.shape[1]}")
+    if st.session_state.df is not None:
+        df = st.session_state.df
 
-        st.markdown("🧾 **Resumen de columnas:**")
-        column_info = pd.DataFrame({
-            "Columna": df.columns,
-            "Tipo de dato": [str(df[col].dtype) for col in df.columns],
-            "¿Tiene nulos?": [df[col].isnull().any() for col in df.columns]
-        })
-        st.dataframe(column_info)
+        # Contexto básico para el modelo
+        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español y entrega solo la respuesta final, clara y directa."
 
-        st.markdown("🔍 **Vista previa aleatoria (10 filas):**")
-        st.dataframe(df.sample(10))
+        response = model.generate_content([
+            context,
+            prompt
+        ])
 
-        # Actualizar contexto del modelo con columnas reales
-        columnas = ", ".join(df.columns)
-        st.session_state.chat.send_message(f"Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: {columnas}. No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están.")
+        code = response.text
 
-    except Exception as e:
-        st.error(f"❌ Error al procesar el archivo: {e}")
-
-# Interfaz de chat
-if st.session_state.df is not None:
-    prompt = st.chat_input("Haz una pregunta sobre tus datos o pide un análisis...")
-
-    if prompt:
-        st.chat_message("user").markdown(prompt)
-
+        # Ejecutar código
         try:
-            # Construir prompt para el modelo
-            full_prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(st.session_state.df.columns)}.
-NO CAMBIES los nombres de las columnas.
-
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-
-Pregunta:
-{prompt}
-"""
-            response = st.session_state.chat.send_message(full_prompt)
-            code = response.text.strip("`python\n").strip("`").strip()
-
-            st.chat_message("assistant").markdown(f"```python\n{code}\n```")
-
-            # Ejecutar código
-            exec_globals = {"df": st.session_state.df, "pd": pd, "plt": plt}
-            buffer = io.StringIO()
-            with redirect_stdout(buffer):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                exec_globals = {"df": df, "pd": pd, "plt": plt, "st": st}
                 exec(code, exec_globals)
+                result = exec_globals.get("result", None)
 
-            output = buffer.getvalue()
-
-            # Mostrar resultados
-            if "result" in exec_globals:
-                result = exec_globals["result"]
+            with st.chat_message("assistant"):
                 if isinstance(result, pd.DataFrame):
-                    st.markdown("📊 **Resultado:**")
-                    st.dataframe(result)
+                    formatted_df = result.copy()
+                    for col in formatted_df.columns:
+                        if formatted_df[col].dtype in ['int64', 'float64']:
+                            formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
+                    st.dataframe(formatted_df, use_container_width=False)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": result,
+                        "is_dataframe": True
+                    })
+
                 elif isinstance(result, pd.Series):
-                    st.markdown("📊 **Resultado (serie):**")
-                    st.dataframe(result.to_frame())
+                    st.dataframe(result.to_frame(), use_container_width=False)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": result.to_frame(),
+                        "is_dataframe": True
+                    })
+
                 elif isinstance(result, (list, dict)):
-                    st.markdown("📊 **Resultado (convertido en tabla):**")
-                    st.dataframe(pd.DataFrame(result))
+                    df_result = pd.DataFrame(result)
+                    st.dataframe(df_result, use_container_width=False)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": df_result,
+                        "is_dataframe": True
+                    })
+
+                elif 'plt' in code or plt.get_fignums():
+                    st.pyplot(plt.gcf())
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": plt.gcf(),
+                        "is_plot": True
+                    })
+                    plt.clf()
+
+                elif output.getvalue().strip():
+                    st.markdown(output.getvalue())
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": output.getvalue().strip()
+                    })
                 else:
-                    st.markdown("📝 **Resultado:**")
-                    st.write(result)
-            elif 'plt' in code or plt.get_fignums():
-                st.markdown("📈 **Gráfico generado**")
-                st.pyplot(plt.gcf())
-                plt.clf()
-            elif output.strip():
-                st.markdown("💬 **Respuesta:**")
-                st.text(output)
-            else:
-                st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
+                    st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
 
         except Exception as e:
             st.error(f"❌ Error al ejecutar el código: {e}")
-else:
-    st.info("💡 Carga un archivo para comenzar el análisis.")
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"❌ Error al ejecutar el código: {e}"
+            })
+    else:
+        st.warning("Por favor carga un archivo para analizar tus datos.")
