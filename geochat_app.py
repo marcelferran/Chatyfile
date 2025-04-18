@@ -26,14 +26,14 @@ st.markdown("""
     }
     /* Limitar tamaño de las tablas */
     .stDataFrame {
-        max-width: 1600px !important;
-        max-height: 300px !important;
+        max-width: 1800px !important;
+        max-height: 800px !important;
         overflow: auto;
     }
     /* Limitar tamaño de los gráficos */
     .stPlotlyChart, .element-container img {
-        max-width: 1600px !important;
-        max-height: 600px !important;
+        max-width: 1200px !important;
+        max-height: 800px !important;
         object-fit: contain;
     }
     </style>
@@ -124,7 +124,7 @@ if st.session_state.df is not None:
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
                 st.dataframe(message["content"], use_container_width=False)
-            elif message["role": "assistant" and message.get("is_plot", False)]:
+            elif message["role"] == "assistant" and message.get("is_plot", False):
                 st.markdown("📈 **Gráfico**:")
                 st.pyplot(message["content"])
             else:
@@ -156,7 +156,7 @@ if st.session_state.df is not None:
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
                 - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
                 - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
-                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico con `plt.figure(figsize=(8, 4))` para un tamaño compacto, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico con `plt.figure(figsize=(8, 4))` para un tamaño compacto, y muestra el gráfico en Streamlit with `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
                 - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
                 - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
@@ -215,6 +215,11 @@ if st.session_state.df is not None:
                             if formatted_df[col].dtype in ['int64', 'float64']:
                                 formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
                         st.dataframe(formatted_df, use_container_width=False)
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": result,
+                            "is_dataframe": True
+                        })
                     elif 'st.pyplot' in code:
                         # El gráfico ya se mostró en el código ejecutado; solo agregar header
                         st.markdown("📈 **Gráfico**:")
