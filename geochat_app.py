@@ -9,6 +9,32 @@ st.set_page_config(page_title="Compras-GPT", layout="centered")
 st.title("🤖 Compras-GPT")
 st.caption("Prototipo desarrollado por Marcel F. Castro Ponce de Leon")
 
+# Estilo CSS para mejorar el formato de las tablas
+st.markdown("""
+    <style>
+    .dataframe {
+        font-size: 14px;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .dataframe th, .dataframe td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    .dataframe th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .dataframe tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .dataframe tr:hover {
+        background-color: #f5f5f5;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Configura la API key de Gemini
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.0-flash')
@@ -51,10 +77,10 @@ if uploaded_file is not None:
             "Tipo de dato": [str(df[col].dtype) for col in df.columns],
             "¿Tiene nulos?": [df[col].isnull().any() for col in df.columns]
         })
-        st.dataframe(column_info)
+        st.dataframe(column_info, use_container_width=True)
 
         st.markdown("🔍 **Vista previa aleatoria (10 filas):**")
-        st.dataframe(df.sample(10))
+        st.dataframe(df.sample(10), use_container_width=True)
 
         # Actualizar contexto del modelo con columnas reales
         columnas = ", ".join(df.columns)
@@ -62,6 +88,18 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
+
+# Función para formatear DataFrames
+def format_dataframe(df):
+    formatted_df = df.copy()
+    for col in formatted_df.columns:
+        if formatted_df[col].dtype in ['float64', 'float32']:
+            formatted_df[col] = formatted_df[col].round(2)  # Redondear a 2 decimales
+        elif formatted_df[col].dtype in ['datetime64[ns]', 'datetime64']:
+            formatted_df[col] = formatted_df[col].dt.strftime('%Y-%m-%d')  # Formato de fecha
+        elif formatted_df[col].dtype == 'object':
+            formatted_df[col] = formatted_df[col].astype(str)  # Convertir objetos a strings
+    return formatted_df
 
 # Interfaz de chat
 if st.session_state.df is not None:
@@ -98,13 +136,16 @@ Pregunta:
                 result = exec_globals["result"]
                 if isinstance(result, pd.DataFrame):
                     st.markdown("📊 **Resultado:**")
-                    st.dataframe(result)
+                    formatted_result = format_dataframe(result)
+                    st.dataframe(formatted_result, use_container_width=True)
                 elif isinstance(result, pd.Series):
                     st.markdown("📊 **Resultado (serie):**")
-                    st.dataframe(result.to_frame())
+                    formatted_result = format_dataframe(result.to_frame())
+                    st.dataframe(formatted_result, use_container_width=True)
                 elif isinstance(result, (list, dict)):
                     st.markdown("📊 **Resultado (convertido en tabla):**")
-                    st.dataframe(pd.DataFrame(result))
+                    formatted_result = format_dataframe(pd.DataFrame(result))
+                    st.dataframe(formatted_result, use_container_width=True)
                 else:
                     st.markdown("📝 **Resultado:**")
                     st.write(result)
