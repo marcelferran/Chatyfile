@@ -1,195 +1,130 @@
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
-import io
-import contextlib
 import matplotlib.pyplot as plt
-import seaborn as sns
-import copy
-import traceback  # Para mostrar trazas de error
+import io
+from contextlib import redirect_stdout
 
-# Configura la página
-st.set_page_config(page_title="ComprasGPT", layout="wide")
-st.title("📊 ComprasGPT")
+st.set_page_config(page_title="Gemini Chatbot", layout="centered")
+st.title("🤖 Gemini Data Analyst")
+st.caption("Prototipo desarrollado por Marcel F. Castro")
 
-# Estilo CSS
-st.markdown("""
-    <style>
-    .dataframe th, .dataframe td {
-        white-space: normal !important;
-        word-wrap: break-word;
-        max-width: 500px;
-        text-align: left;
-    }
-    .dataframe th {
-        background-color: #f0f2f6;
-        font-weight: bold;
-    }
-    .stDataFrame {
-        max-width: 2000px !important;
-        max-height: 1000px !important;
-        overflow: auto;
-    }
-    .stPlotlyChart, .element-container img {
-        max-width: 2000px !important;
-        max-height: 1000px !important;
-        object-fit: contain;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Inicializar estado de sesión
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Configura la API key
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-2.0-flash')
+# Mostrar historial de mensajes
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        if msg.get("is_dataframe"):
+            st.dataframe(msg["content"], use_container_width=False)
+        elif msg.get("is_plot"):
+            st.pyplot(msg["content"])
+        else:
+            st.markdown(msg["content"])
 
-# Inicializa chat
-def initialize_chat(df):
-    return model.start_chat(history=[
-        {"role": "user", "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]},
-        {"role": "model", "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]}
-    ])
+# Entrada del usuario
+prompt = st.chat_input("Escribe tu mensaje o pregunta aquí...")
 
-# Estado de sesión
-if 'df' not in st.session_state: st.session_state.df = None
-if 'chat' not in st.session_state: st.session_state.chat = None
-if 'messages' not in st.session_state: st.session_state.messages = []
+if prompt:
+    # Mostrar mensaje del usuario
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-# Subida de archivo
-st.header("1. Cargar archivo")
-uploaded_file = st.file_uploader("Sube un archivo CSV o Excel", type=["csv", "xls", "xlsx"])
-
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith('.csv'):
+    # Cargar datos si hay archivo subido
+    uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV o Excel", type=["csv", "xlsx"])
+    if uploaded_file is not None:
+        if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
-        st.session_state.df = df
-        st.session_state.chat = initialize_chat(df)
-        st.success("✅ Archivo cargado correctamente.")
-    except Exception as e:
-        st.error(f"❌ Error al cargar el archivo: {str(e)}")
 
-# Visualización si hay DataFrame
-if st.session_state.df is not None:
-    df = st.session_state.df
-    
-    st.header("2. Resumen del DataFrame")
-    col1, col2 = st.columns(2)
-    col1.metric("Número de filas", f"{df.shape[0]:,}")
-    col2.metric("Número de columnas", df.shape[1])
+        # Contexto básico para el modelo
+        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español."
 
-    st.header("3. Detalles de las columnas")
-    column_info = pd.DataFrame({
-        'Columna': df.columns,
-        'Tipo de dato': [str(dtype) for dtype in df.dtypes],
-        'Valores nulos': [df[col].isna().sum() for col in df.columns]
-    })
-    st.dataframe(column_info, use_container_width=False)
+        from openai import OpenAI
+        client = OpenAI()
 
-    st.header("4. Muestra de 10 filas")
-    st.dataframe(df.head(10), use_container_width=False)
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2
+        )
 
-    st.header("5. Haz tus preguntas")
-    st.write("Escribe tu pregunta sobre el DataFrame. Escribe 'salir' para limpiar el chat.")
-    st.markdown("""
-        **Ejemplos:**
-        - Top 10 proveedores por número de orden de compra
-        - Gráfico de barras del top 5 de proveedores por órdenes
-        - Cuántas órdenes de compra hay en total
-    """)
+        code = response.choices[0].message.content
 
-    # Mostrar historial de mensajes previos
-    for message in st.session_state.messages[:-1]:
-        with st.chat_message(message["role"]):
-            if message["role"] == "assistant" and message.get("is_dataframe", False):
-                st.markdown("📊 **Resultado**:")
-                st.dataframe(message["content"], use_container_width=False)
-            elif message["role"] == "assistant" and message.get("is_plot", False):
-                st.markdown("📈 **Gráfico**:")
-                st.pyplot(message["content"])
+        # Mostrar respuesta como código
+        with st.chat_message("assistant"):
+            st.markdown("```python\n" + code + "\n```")
+
+        # Ejecutar código
+        try:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                exec_globals = {"df": df, "pd": pd, "plt": plt, "st": st}
+                exec(code, exec_globals)
+                result = exec_globals.get("result", None)
+
+            # Mostrar resultados
+            if isinstance(result, pd.DataFrame):
+                st.markdown("📊 **Resultado:**")
+                formatted_df = result.copy()
+                for col in formatted_df.columns:
+                    if formatted_df[col].dtype in ['int64', 'float64']:
+                        formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
+                st.dataframe(formatted_df, use_container_width=False)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": result,
+                    "is_dataframe": True
+                })
+
+            elif isinstance(result, pd.Series):
+                st.markdown("📊 **Resultado (serie convertida en tabla):**")
+                st.dataframe(result.to_frame(), use_container_width=False)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": result.to_frame(),
+                    "is_dataframe": True
+                })
+
+            elif isinstance(result, (list, dict)):
+                st.markdown("📊 **Resultado (convertido en tabla):**")
+                df_result = pd.DataFrame(result)
+                st.dataframe(df_result, use_container_width=False)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": df_result,
+                    "is_dataframe": True
+                })
+
+            elif 'plt' in code or plt.get_fignums():
+                st.markdown("📈 **Gráfico generado**")
+                st.pyplot(plt.gcf())
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": plt.gcf(),
+                    "is_plot": True
+                })
+                plt.clf()
+
+            elif output.getvalue().strip():
+                st.markdown(output.getvalue())
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": output.getvalue().strip()
+                })
+
             else:
-                st.markdown(message["content"])
+                st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
 
-    pregunta = st.chat_input("🤔 Tu pregunta:")
-
-    if pregunta:
-        with st.chat_message("user"):
-            st.markdown(pregunta)
-        st.session_state.messages.append({"role": "user", "content": pregunta})
-
-        if pregunta.lower() == "salir":
-            st.session_state.messages = []
-            st.session_state.chat = initialize_chat(df)
-            st.success("👋 Chat reiniciado.")
-        else:
-            try:
-                prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(df.columns)}.
-NO CAMBIES los nombres de las columnas.
-
-Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta...
-(PARTE OMITIDA PARA BREVEDAD, MISMO PROMPT)
-                Pregunta:
-                {pregunta}
-                """
-
-                response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("`python\n").strip("`").strip()
-
-                with st.expander("📦 Código generado"):
-                    st.code(code, language="python")
-
-                exec_globals = {
-                    "df": df,
-                    "pd": pd,
-                    "plt": plt,
-                    "sns": sns,
-                    "st": st
-                }
-                buffer = io.StringIO()
-
-                with contextlib.redirect_stdout(buffer):
-                    with st.spinner("Procesando..."):
-                        try:
-                            result = eval(code, exec_globals)
-                        except:
-                            exec(code, exec_globals)
-                            result = None
-
-                output = buffer.getvalue()
-
-                with st.chat_message("assistant"):
-                    if isinstance(result, pd.DataFrame):
-                        st.markdown("📊 **Resultado**:")
-                        formatted_df = result.copy()
-                        for col in formatted_df.columns:
-                            if formatted_df[col].dtype in ['int64', 'float64']:
-                                formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
-                        st.dataframe(formatted_df, use_container_width=False)
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": result,
-                            "is_dataframe": True
-                        })
-                    elif 'st.pyplot' in code:
-                        st.markdown("📈 **Gráfico generado**")
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": plt.gcf(),
-                            "is_plot": True
-                        })
-                    elif output.strip():
-                        st.markdown(output)
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": output.strip()
-                        })
-                    else:
-                        st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
-            except Exception as e:
-                st.error("❌ Ocurrió un error al ejecutar el código.")
-                st.exception(e)
-                st.text("📋 Detalles del error:")
-                st.text(traceback.format_exc())
+        except Exception as e:
+            st.error(f"❌ Error al ejecutar el código: {e}")
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"❌ Error al ejecutar el código: {e}"
+            })
+    else:
+        st.warning("Por favor carga un archivo para analizar tus datos.")
