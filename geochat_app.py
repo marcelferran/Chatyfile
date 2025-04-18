@@ -9,28 +9,31 @@ st.set_page_config(page_title="Compras-GPT", layout="centered")
 st.title("🤖 Compras-GPT")
 st.caption("Prototipo desarrollado por Marcel F. Castro Ponce de Leon")
 
-# Estilo CSS para mejorar el formato de las tablas
+# Estilo CSS mejorado para tablas
 st.markdown("""
     <style>
     .dataframe {
         font-size: 14px;
         width: 100%;
         border-collapse: collapse;
+        margin-top: 10px;
     }
     .dataframe th, .dataframe td {
-        padding: 8px;
+        padding: 10px;
         text-align: left;
-        border: 1px solid #ddd;
+        border: 1px solid #ccc;
+        vertical-align: top;
     }
     .dataframe th {
-        background-color: #f2f2f2;
+        background-color: #e6e6e6;
         font-weight: bold;
+        text-align: left;
     }
     .dataframe tr:nth-child(even) {
-        background-color: #f9f9f9;
+        background-color: #f8f8f8;
     }
     .dataframe tr:hover {
-        background-color: #f5f5f5;
+        background-color: #f0f0f0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -92,13 +95,20 @@ if uploaded_file is not None:
 # Función para formatear DataFrames
 def format_dataframe(df):
     formatted_df = df.copy()
+    # Reiniciar el índice para evitar índices desordenados
+    if formatted_df.index.name is not None or not formatted_df.index.is_integer():
+        formatted_df = formatted_df.reset_index(drop=True)
+    
     for col in formatted_df.columns:
         if formatted_df[col].dtype in ['float64', 'float32']:
-            formatted_df[col] = formatted_df[col].round(2)  # Redondear a 2 decimales
+            formatted_df[col] = formatted_df[col].round(2).astype(str)  # Convertir a string para evitar problemas de formato
         elif formatted_df[col].dtype in ['datetime64[ns]', 'datetime64']:
             formatted_df[col] = formatted_df[col].dt.strftime('%Y-%m-%d')  # Formato de fecha
         elif formatted_df[col].dtype == 'object':
-            formatted_df[col] = formatted_df[col].astype(str)  # Convertir objetos a strings
+            formatted_df[col] = formatted_df[col].astype(str).fillna('N/A')  # Convertir a string y manejar nulos
+        else:
+            formatted_df[col] = formatted_df[col].astype(str)  # Convertir todo a string para consistencia
+    
     return formatted_df
 
 # Interfaz de chat
@@ -109,13 +119,14 @@ if st.session_state.df is not None:
         st.chat_message("user").markdown(prompt)
 
         try:
-            # Construir prompt para el modelo
+            # Construir prompt para el modelo con instrucción adicional para tablas
             full_prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(st.session_state.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Si el resultado es una tabla, asegúrate de devolver un DataFrame con columnas claras y sin índices innecesarios (usa `reset_index()` si es necesario).
 
 Pregunta:
 {prompt}
@@ -137,15 +148,15 @@ Pregunta:
                 if isinstance(result, pd.DataFrame):
                     st.markdown("📊 **Resultado:**")
                     formatted_result = format_dataframe(result)
-                    st.dataframe(formatted_result, use_container_width=True)
+                    st.dataframe(formatted_result, use_container_width=True, hide_index=True)
                 elif isinstance(result, pd.Series):
                     st.markdown("📊 **Resultado (serie):**")
-                    formatted_result = format_dataframe(result.to_frame())
-                    st.dataframe(formatted_result, use_container_width=True)
+                    formatted_result = format_dataframe(result.to_frame().reset_index())
+                    st.dataframe(formatted_result, use_container_width=True, hide_index=True)
                 elif isinstance(result, (list, dict)):
                     st.markdown("📊 **Resultado (convertido en tabla):**")
                     formatted_result = format_dataframe(pd.DataFrame(result))
-                    st.dataframe(formatted_result, use_container_width=True)
+                    st.dataframe(formatted_result, use_container_width=True, hide_index=True)
                 else:
                     st.markdown("📝 **Resultado:**")
                     st.write(result)
