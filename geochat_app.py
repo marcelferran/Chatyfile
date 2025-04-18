@@ -11,18 +11,30 @@ import copy
 st.set_page_config(page_title="ComprasGPT", layout="wide")
 st.title("📊 ComprasGPT")
 
-# Estilo CSS para mejorar la presentación de tablas
+# Estilo CSS para mejorar la presentación de tablas y gráficos
 st.markdown("""
     <style>
     .dataframe th, .dataframe td {
         white-space: normal !important;
         word-wrap: break-word;
-        max-width: 300px;
+        max-width: 200px;
         text-align: left;
     }
     .dataframe th {
         background-color: #f0f2f6;
         font-weight: bold;
+    }
+    /* Limitar tamaño de las tablas */
+    .stDataFrame {
+        max-width: 600px !important;
+        max-height: 300px !important;
+        overflow: auto;
+    }
+    /* Limitar tamaño de los gráficos */
+    .stPlotlyChart, .element-container img {
+        max-width: 600px !important;
+        max-height: 300px !important;
+        object-fit: contain;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -90,11 +102,11 @@ if st.session_state.df is not None:
         'Tipo de dato': [str(dtype) for dtype in df.dtypes],
         'Valores nulos': [df[col].isna().sum() for col in df.columns]
     })
-    st.dataframe(column_info, use_container_width=True, hide_index=True)
+    st.dataframe(column_info, use_container_width=False)
     
     # 4. Muestra de 10 filas
     st.header("4. Muestra de 10 filas")
-    st.dataframe(df.head(10), use_container_width=True)
+    st.dataframe(df.head(10), use_container_width=False)
     
     # 5. Sección de preguntas
     st.header("5. Haz tus preguntas")
@@ -111,7 +123,7 @@ if st.session_state.df is not None:
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
-                st.dataframe(message["content"], use_container_width=True)
+                st.dataframe(message["content"], use_container_width=False)
             elif message["role"] == "assistant" and message.get("is_plot", False):
                 st.markdown("📈 **Gráfico**:")
                 st.pyplot(message["content"])
@@ -142,10 +154,11 @@ if st.session_state.df is not None:
                 NO CAMBIES los nombres de las columnas.
 
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
-                - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
-                - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
-                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
-                - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
+                - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado'). Usa .reset_index() y .rename() si es necesario para evitar Series.
+                - Si la pregunta incluye un año (como 2024), filtra el DataFrame usando la columna de fecha relevante (por ejemplo, 'Fecha') y extrae el año con .dt.year.
+                - Si la pregunta pide un total gastado, usa la columna relevante (por ejemplo, 'Total') para la suma.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico con `plt.figure(figsize=(8, 4))` para un tamaño compacto, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show(), plt.clf(), plt.close(), ni cualquier otra función que cierre o limpie la figura.
+                - Asegúrate de que el código sea conciso y no incluya comentarios, prints, ni texto explicativo innecesarios.
                 - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
                 Ejemplo 1:
@@ -158,18 +171,27 @@ if st.session_state.df is not None:
                 import matplotlib.pyplot as plt
                 import seaborn as sns
                 top_5 = df['Proveedor'].value_counts().head(5)
-                plt.figure(figsize=(10, 6))
+                plt.figure(figsize=(8, 4))
                 sns.barplot(x=top_5.values, y=top_5.index)
                 plt.xlabel('Número de Órdenes')
                 plt.ylabel('Proveedor')
                 plt.title('Top 5 Proveedores por Número de Órdenes')
                 st.pyplot(plt.gcf())
 
+                Ejemplo 3:
+                Pregunta: "Dame una tabla con el top 10 de proveedores por número de orden de compra y total en 2024"
+                Código:
+                df_2024 = df[df['Fecha'].dt.year == 2024]
+                result = df_2024.groupby('Proveedor').agg({{'Orden de Compra': 'count', 'Total': 'sum'}}).reset_index().rename(columns={{'Orden de Compra': 'Número de Órdenes', 'Total': 'Total Gastado'}}).sort_values('Número de Órdenes', ascending=False).head(10)
+
                 Pregunta:
                 {pregunta}
                 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("`python\n").strip("`").strip()
+                
+                # Opcional: Descomentar para depurar el código generado
+                # st.write(f"**Debug: Código generado**:\n```python\n{code}\n```")
                 
                 # Ejecutar el código
                 exec_globals = {
@@ -202,7 +224,7 @@ if st.session_state.df is not None:
                         for col in formatted_df.columns:
                             if formatted_df[col].dtype in ['int64', 'float64']:
                                 formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
-                        st.dataframe(formatted_df, use_container_width=True)
+                        st.dataframe(formatted_df, use_container_width=False)
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": result,
@@ -221,7 +243,7 @@ if st.session_state.df is not None:
                         # Limpiar la figura después de almacenar
                         plt.clf()
                     elif output.strip():
-                        st.markdown(f"💬 **Resultado**:\n\n{output}")
+                        st.markdown(f"💬 **Resultado**:\n\n{output W
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": output
@@ -233,10 +255,10 @@ if st.session_state.df is not None:
                             "content": str(result)
                         })
                     else:
-                        st.markdown("✅ Código ejecutado sin salida.")
+                        st.error(f"❌ No se generó una tabla, gráfico o resultado claro para la consulta.")
                         st.session_state.messages.append({
                             "role": "assistant",
-                            "content": "✅ Código ejecutado sin salida."
+                            "content": "❌ No se generó una tabla, gráfico o resultado claro para la consulta."
                         })
                 
             except Exception as e:
