@@ -5,8 +5,6 @@ import io
 import contextlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.express as px
-import plotly.graph_objects as go
 
 # Configura la página
 st.set_page_config(page_title="ComprasGPT", layout="wide")
@@ -145,7 +143,7 @@ if st.session_state.df is not None:
                 Responde a esta pregunta escribiendo únicamente el código Python que da la respuesta.
                 - Si la pregunta pide una tabla, un ranking (como un top 10), o cualquier resultado tabular, SIEMPRE devuelve un pandas DataFrame con columnas claras y nombres descriptivos en español (ejemplo: 'Proveedor', 'Número de Órdenes', 'Total Gastado').
                 - NO devuelvas una Series; siempre usa .reset_index() y .rename() si es necesario.
-                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn y termina el código con `st.pyplot(plt.gcf())` para mostrar el gráfico en Streamlit. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns) y limpiar la figura con `plt.clf()` después.
+                - Si la pregunta pide un gráfico (como un gráfico de barras, pastel, etc.), usa matplotlib o seaborn, crea el gráfico, y muestra el gráfico en Streamlit con `st.pyplot(plt.gcf())`. Asegúrate de importar las librerías necesarias (matplotlib.pyplot como plt, seaborn como sns). NO uses plt.show() ni plt.clf() en el código.
                 - Asegúrate de que el código sea conciso y no incluya comentarios ni prints innecesarios.
                 - Si la pregunta no requiere una tabla ni un gráfico, devuelve el resultado adecuado (como un número o texto), pero evita usar print a menos que se pida explícitamente.
 
@@ -165,7 +163,6 @@ if st.session_state.df is not None:
                 plt.ylabel('Proveedor')
                 plt.title('Top 5 Proveedores por Número de Órdenes')
                 st.pyplot(plt.gcf())
-                plt.clf()
 
                 Pregunta:
                 {pregunta}
@@ -173,26 +170,28 @@ if st.session_state.df is not None:
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("`python\n").strip("`").strip()
                 
+                # Mostrar el código generado para depuración
+                st.write(f"**Debug: Código generado**:\n```python\n{code}\n```")
+                
                 # Ejecutar el código
                 exec_globals = {
                     "df": df,
                     "pd": pd,
                     "plt": plt,
                     "sns": sns,
-                    "st": st,
-                    "px": px,
-                    "go": go
+                    "st": st
                 }
                 buffer = io.StringIO()
                 
                 with contextlib.redirect_stdout(buffer):
-                    try:
-                        # Intentar evaluar el código como expresión; si falla, ejecutarlo
-                        result = eval(code, exec_globals)
-                    except:
-                        # Si eval falla, ejecutar el código (para plots or print statements)
-                        exec(code, exec_globals)
-                        result = None
+                    with st.spinner("Generando gráfico..."):
+                        try:
+                            # Intentar evaluar el código como expresión; si falla, ejecutarlo
+                            result = eval(code, exec_globals)
+                        except:
+                            # Si eval falla, ejecutar el código (para plots or print statements)
+                            exec(code, exec_globals)
+                            result = None
                 
                 output = buffer.getvalue()
                 
@@ -212,14 +211,13 @@ if st.session_state.df is not None:
                             "is_dataframe": True
                         })
                     elif 'st.pyplot' in code:
-                        # El gráfico ya se mostró en el código ejecutado
                         st.markdown("📈 **Gráfico**:")
+                        # El gráfico ya se mostró en el código ejecutado
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": plt.gcf(),
                             "is_plot": True
                         })
-                        plt.clf()  # Limpiar la figura después de almacenarla
                     elif output.strip():
                         st.markdown(f"💬 **Resultado**:\n\n{output}")
                         st.session_state.messages.append({
@@ -238,6 +236,9 @@ if st.session_state.df is not None:
                             "role": "assistant",
                             "content": "✅ Código ejecutado sin salida."
                         })
+                
+                # Limpiar la figura después de mostrarla
+                plt.clf()
                 
             except Exception as e:
                 with st.chat_message("assistant"):
