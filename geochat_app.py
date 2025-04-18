@@ -124,7 +124,7 @@ if st.session_state.df is not None:
             if message["role"] == "assistant" and message.get("is_dataframe", False):
                 st.markdown("📊 **Resultado**:")
                 st.dataframe(message["content"], use_container_width=False)
-            elif message["role": "assistant" and message.get("is_plot", False):
+            elif message["role": "assistant" and message.get("is_plot", False)]:
                 st.markdown("📈 **Gráfico**:")
                 st.pyplot(message["content"])
             else:
