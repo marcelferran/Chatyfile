@@ -4,13 +4,32 @@ import matplotlib.pyplot as plt
 import io
 from contextlib import redirect_stdout
 
-st.set_page_config(page_title="Gemini Chatbot", layout="centered")
+st.set_page_config(page_title="Gemini Data Analyst", layout="centered")
 st.title("🤖 Gemini Data Analyst")
 st.caption("Prototipo desarrollado por Marcel F. Castro")
 
 # Inicializar estado de sesión
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "df" not in st.session_state:
+    st.session_state.df = None
+
+# Subida de archivo en el sidebar
+uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV o Excel", type=["csv", "xlsx"])
+
+if uploaded_file is not None:
+    if uploaded_file.name.endswith(".csv"):
+        st.session_state.df = pd.read_csv(uploaded_file)
+    else:
+        st.session_state.df = pd.read_excel(uploaded_file)
+
+    st.sidebar.success("✅ Archivo cargado correctamente")
+
+    # Mostrar resumen básico si es la primera vez que se carga
+    if "df_summary_shown" not in st.session_state:
+        st.chat_message("assistant").markdown("📄 **Resumen del archivo cargado:**")
+        st.chat_message("assistant").dataframe(st.session_state.df.head())
+        st.session_state.df_summary_shown = True
 
 # Mostrar historial de mensajes
 for msg in st.session_state.messages:
@@ -26,23 +45,16 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("Escribe tu mensaje o pregunta aquí...")
 
 if prompt:
-    # Mostrar mensaje del usuario
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Cargar datos si hay archivo subido
-    uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV o Excel", type=["csv", "xlsx"])
-    if uploaded_file is not None:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-
-        # Contexto básico para el modelo
-        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español."
+    if st.session_state.df is not None:
+        df = st.session_state.df
 
         from openai import OpenAI
         client = OpenAI()
+
+        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español."
 
         response = client.chat.completions.create(
             model="gpt-4",
@@ -55,7 +67,7 @@ if prompt:
 
         code = response.choices[0].message.content
 
-        # Mostrar respuesta como código
+        # Mostrar código sugerido
         with st.chat_message("assistant"):
             st.markdown("```python\n" + code + "\n```")
 
@@ -119,6 +131,10 @@ if prompt:
 
             else:
                 st.markdown("✅ Código ejecutado correctamente pero no se generó salida visible.")
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "✅ Código ejecutado correctamente pero no se generó salida visible."
+                })
 
         except Exception as e:
             st.error(f"❌ Error al ejecutar el código: {e}")
@@ -127,4 +143,4 @@ if prompt:
                 "content": f"❌ Error al ejecutar el código: {e}"
             })
     else:
-        st.warning("Por favor carga un archivo para analizar tus datos.")
+        st.warning("⚠️ Por favor carga un archivo antes de hacer preguntas.")
