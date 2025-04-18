@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import io
 from contextlib import redirect_stdout
 import google.generativeai as genai
+import re
 
-st.set_page_config(page_title="ComprasGPT", layout="wide")
-st.title("🤖 ComprasGPT")
-st.caption("Prototipo desarrollado por Marcel F. Castro Ponce de Leon")
+st.set_page_config(page_title="Compras-GPT", layout="wide")
+st.title("🤖 Compras-GPT")
+st.caption("Prototipo desarrollado por Marcel F. Castro")
 
 # Configura la API key
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -24,6 +25,9 @@ if "df" not in st.session_state:
 uploaded_file = st.sidebar.file_uploader("📁 **Carga un archivo CSV o Excel**", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
+    # Limpiar el historial de mensajes al cargar un nuevo archivo
+    st.session_state.messages.clear()
+
     if uploaded_file.name.endswith(".csv"):
         st.session_state.df = pd.read_csv(uploaded_file)
     else:
@@ -50,7 +54,7 @@ if uploaded_file is not None:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         if msg.get("is_dataframe"):
-            st.dataframe(msg["content"], use_container_width=False)
+            st.dataframe(msg["content"], use_container_width=True)
         elif msg.get("is_plot"):
             st.pyplot(msg["content"])
         else:
@@ -68,14 +72,28 @@ if prompt:
         df = st.session_state.df
 
         # Contexto básico para el modelo
-        context = f"Este es un DataFrame llamado df con columnas: {', '.join(df.columns)}. Responde en español y entrega solo la respuesta final, clara y directa."
+        context = f"""
+Este es un DataFrame de pandas llamado df con columnas: {', '.join(df.columns)}.
+Responde siempre en español, de forma clara y breve.
+No incluyas ningún bloque de código ni explicación adicional.
+Si haces un gráfico, solo genera el gráfico.
+Si das un resultado numérico o una tabla, responde como:
 
+Pregunta: [la pregunta original]  
+Respuesta: [respuesta clara y directa sin código]
+
+No incluyas encabezados innecesarios ni envoltorios de Markdown.
+"""
+
+        # Limpiar el código generado
         response = model.generate_content([
             context,
             prompt
         ])
 
-        code = response.text
+        # Filtrar el código generado solo si está entre ```python ... ```
+        code_blocks = re.findall(r"```python(.*?)```", response.text, re.DOTALL)
+        code = code_blocks[0].strip() if code_blocks else response.text.strip()
 
         # Ejecutar código
         try:
@@ -91,7 +109,7 @@ if prompt:
                     for col in formatted_df.columns:
                         if formatted_df[col].dtype in ['int64', 'float64']:
                             formatted_df[col] = formatted_df[col].apply(lambda x: f"{x:,}")
-                    st.dataframe(formatted_df, use_container_width=False)
+                    st.dataframe(formatted_df, use_container_width=True)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": result,
@@ -99,7 +117,7 @@ if prompt:
                     })
 
                 elif isinstance(result, pd.Series):
-                    st.dataframe(result.to_frame(), use_container_width=False)
+                    st.dataframe(result.to_frame(), use_container_width=True)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": result.to_frame(),
@@ -108,7 +126,7 @@ if prompt:
 
                 elif isinstance(result, (list, dict)):
                     df_result = pd.DataFrame(result)
-                    st.dataframe(df_result, use_container_width=False)
+                    st.dataframe(df_result, use_container_width=True)
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": df_result,
