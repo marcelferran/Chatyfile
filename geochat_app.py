@@ -101,9 +101,9 @@ if st.session_state.df is not None:
     st.write("Escribe tu pregunta sobre el DataFrame. Escribe 'salir' para limpiar el chat.")
     st.markdown("""
         **Ejemplos de preguntas:**
-        - Cuántas órdenes de compra hay en total?
         - Dame una tabla con el top 10 de proveedores por número de orden de compra
         - Muestra un gráfico de barras del top 5 de proveedores por número de órdenes
+        - Cuántas órdenes de compra hay en total
     """)
 
     # Mostrar historial de mensajes
@@ -182,7 +182,7 @@ if st.session_state.df is not None:
                 buffer = io.StringIO()
                 
                 with contextlib.redirect_stdout(buffer):
-                    with st.spinner("Generando gráfico..."):
+                    with st.spinner("Procesando..."):
                         try:
                             # Intentar evaluar el código como expresión; si falla, ejecutarlo
                             result = eval(code, exec_globals)
@@ -210,15 +210,14 @@ if st.session_state.df is not None:
                         })
                     elif 'st.pyplot' in code:
                         st.markdown("📈 **Gráfico**:")
-                        # Copiar la figura para almacenarla sin que se borre
+                        # El gráfico ya se mostró en el código ejecutado; almacenar para el historial
                         fig = copy.deepcopy(plt.gcf())
-                        st.pyplot(fig)
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": fig,
                             "is_plot": True
                         })
-                        # Limpiar la figura después de mostrar y almacenar
+                        # Limpiar la figura después de almacenar
                         plt.clf()
                     elif output.strip():
                         st.markdown(f"💬 **Resultado**:\n\n{output}")
