@@ -65,7 +65,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Cabecera con logotipo
-st markdown('<div class="header">', unsafe_allow_html=True)
+st.markdown('<div class="header">', unsafe_allow_html=True)
 st.image("logo.jpeg", width=150)  # Asegúrate de tener logo en el repositorio
 st.title("📄 Chatyfile")
 st.markdown('</div>', unsafe_allow_html=True)
