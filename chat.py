@@ -3,6 +3,8 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Configurar la API de Gemini
 try:
@@ -19,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS personalizados
+# Estilos CSS personalizados (sin cambios relevantes para la lógica)
 st.markdown("""
     <style>
     .stApp {
@@ -63,19 +65,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cabecera con logotipo a la izquierda
+# Cabecera con logotipo a la izquierda (sin cambios relevantes para la lógica)
 st.markdown('<div class="header">', unsafe_allow_html=True)
 st.image("logo.jpeg", width=400)  # Logo más grande
 st.title("📄 Chatyfile")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Bienvenida
+# Bienvenida (sin cambios relevantes para la lógica)
 st.markdown("""
     <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
     <p style='text-align: center;'>Sube tu archivo y haz preguntas sobre tus datos</p>
 """, unsafe_allow_html=True)
 
-# Barra lateral
+# Barra lateral (sin cambios relevantes para la lógica)
 with st.sidebar:
     st.header("🤖 Opciones")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
@@ -85,14 +87,14 @@ with st.sidebar:
     st.write("2. Escribe tu pregunta y presiona 'Enter' o haz clic en 'Enviar'.")
     st.write("3. Escribe 'salir' para finalizar.")
 
-# Pie de página
+# Pie de página (sin cambios relevantes para la lógica)
 st.markdown("""
     <div class="footer">
         <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Inicializar estado de la sesión
+# Inicializar estado de la sesión (sin cambios relevantes para la lógica)
 if "chat" not in st.session_state:
     st.session_state.chat = None
     st.session_state.history = []
@@ -101,8 +103,8 @@ if "chat" not in st.session_state:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
-    
-    # Resumen del archivo
+
+    # Resumen del archivo (sin cambios relevantes para la lógica)
     num_rows, num_cols = df.shape
     st.write("**Resumen del archivo:**")
     st.write(f"- Número de filas: {num_rows}")
@@ -148,35 +150,34 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+Responde a la pregunta del usuario de forma amigable y legible.
+Si la pregunta requiere mostrar una tabla, utiliza `st.table()` o `st.dataframe()` para mostrarla de forma clara.
+Si la pregunta requiere mostrar una gráfica, utiliza las bibliotecas `matplotlib` o `seaborn` para crear la gráfica y luego utiliza `st.pyplot()` para mostrarla.
+Asegúrate de que los títulos de las gráficas y las etiquetas de los ejes sean claros y relevantes.
+Evita imprimir el código Python en la respuesta al usuario.
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
+                answer = response.text.strip()
+                st.session_state.history.append(f"🤖 Chatyfile: {answer}")
 
-                exec_globals = {"df": df}
-                buffer = io.StringIO()
+                # Intenta ejecutar el código generado (si lo hay) para mostrar tablas o gráficos
+                code_blocks = [part.text for part in response.parts if isinstance(part, genai.types.Part.from_dict({"text": ""}).__class__)]
+                if code_blocks:
+                    code = code_blocks[0].strip("```python\n").strip("```").strip()
+                    exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "st": st}
+                    buffer = io.StringIO()
 
-                with contextlib.redirect_stdout(buffer):
-                    try:
-                        exec(code, exec_globals)
-                    except Exception as e:
-                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
-
-                output = buffer.getvalue()
-
-                if output.strip():
-                    st.session_state.history.append("💬 Respuesta:")
-                    st.session_state.history.append(output)
-                else:
-                    st.session_state.history.append("✅ Código ejecutado sin salida.")
+                    with contextlib.redirect_stdout(buffer):
+                        try:
+                            exec(code, exec_globals)
+                        except Exception as e:
+                            st.session_state.history.append(f"❌ Error al ejecutar el código para la visualización: {str(e)}")
 
             except Exception as e:
-                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
+                st.session_state.history.append(f"❌ Error al procesar la pregunta: {str(e)}")
 
         st.rerun()  # Refrescar la página para mostrar el historial actualizado
 else:
