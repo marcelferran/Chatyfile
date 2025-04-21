@@ -3,106 +3,181 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
 
-# Configuración inicial
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+# Configurar la API de Gemini
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+except KeyError:
+    st.error("La clave GEMINI_API_KEY no está configurada en los Secrets de Streamlit Cloud.")
+    st.stop()
 
-st.set_page_config(page_title="Chatyfile", layout="wide")
-st.title("📊 Chatyfile")
-st.markdown("Hazle preguntas a tu archivo CSV usando Gemini ✨")
+# Configuración de la página
+st.set_page_config(
+    page_title="Chatyfile",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-uploaded_file = st.file_uploader("📁 Sube un archivo CSV", type=["csv"])
+# Estilos CSS personalizados
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f0f2f6;
+    }
+    .header {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: #1f77b4;
+        border-radius: 10px;
+    }
+    .header img {
+        width: 400px; /* Logo más grande */
+        margin-right: 20px;
+    }
+    h1 {
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+    }
+    .css-1d391kg {
+        background-color: #ffffff;
+        border-right: 2px solid #1f77b4;
+    }
+    .stButton>button {
+        background-color: #ff7f0e;
+        color: white;
+        border-radius: 5px;
+    }
+    .footer {
+        text-align: center;
+        padding: 10px;
+        background-color: #1f77b4;
+        color: white;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        border-top: 2px solid #ffffff;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# Cabecera con logotipo a la izquierda
+st.markdown('<div class="header">', unsafe_allow_html=True)
+st.image("logo.jpeg", width=400)  # Logo más grande
+st.title("📄 Chatyfile")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Bienvenida
+st.markdown("""
+    <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
+    <p style='text-align: center;'>Sube tu archivo y haz preguntas sobre tus datos</p>
+""", unsafe_allow_html=True)
+
+# Barra lateral
+with st.sidebar:
+    st.header("🤖 Opciones")
+    uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
+    st.markdown("---")
+    st.subheader("⚠️ Instrucciones")
+    st.write("1. Sube el archivo con tus datos.")
+    st.write("2. Escribe tu pregunta y presiona 'Enter' o haz clic en 'Enviar'.")
+    st.write("3. Escribe 'salir' para finalizar.")
+
+# Pie de página
+st.markdown("""
+    <div class="footer">
+        <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
+    </div>
+""", unsafe_allow_html=True)
+
+# Inicializar estado de la sesión
 if "chat" not in st.session_state:
     st.session_state.chat = None
     st.session_state.history = []
 
+# Lógica principal de la app
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
-    st.markdown("### 👁️ Vista previa del archivo")
-    st.dataframe(df.head(), use_container_width=True)
+    
+    # Resumen del archivo
+    num_rows, num_cols = df.shape
+    st.write("**Resumen del archivo:**")
+    st.write(f"- Número de filas: {num_rows}")
+    st.write(f"- Número de columnas: {num_cols}")
+    st.write("**Nombres de las columnas:**")
+    st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
 
+    # Inicializar el modelo y el chat si no está inicializado
     if st.session_state.chat is None:
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         st.session_state.chat = model.start_chat(history=[
             {
                 "role": "user",
-                "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns)]
+                "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]
             },
             {
                 "role": "model",
                 "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
             }
         ])
+        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
+        st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    st.markdown("### 🧠 Pregunta para Gemini:")
-    pregunta = st.text_input("Haz una pregunta sobre el archivo (escribe 'salir' para reiniciar):")
+    # Mostrar historial de la conversación
+    for message in st.session_state.history:
+        st.write(message)
 
-    if pregunta:
+    # Formulario para la pregunta (se envía con "Enter" o botón)
+    with st.form(key='pregunta_form', clear_on_submit=True):
+        pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+        submitted = st.form_submit_button(label="Enviar", disabled=False)  # Botón habilitado
+
+    # Procesar la pregunta si se envía el formulario
+    if submitted and pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.chat = None
+            st.session_state.history.append("👋 Adios.")
+            st.session_state.chat = None  # Reiniciar el chat
             st.rerun()
         else:
-            with st.spinner("🔄 Obteniendo respuesta de Gemini..."):
+            try:
                 prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria con estas columnas: {', '.join(df.columns)}.
-No intentes volver a cargarlo, ya está disponible.
+Tienes un DataFrame de pandas llamado `df` cargado en memoria.
+Estas son las columnas reales: {', '.join(df.columns)}.
+NO CAMBIES los nombres de las columnas.
 
-Genera solo el código Python para responder la siguiente pregunta:
+Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+
+Pregunta:
 {pregunta}
 """
-
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python").strip("```").strip()
+                code = response.text.strip("```python\n").strip("```").strip()
+                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
 
-            st.markdown("### 🤖 Respuesta de Gemini:")
-            st.code(code, language="python")
-
-            st.markdown("### ▶️ Ejecutando código...")
-
-            try:
-                exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "np": np}
+                exec_globals = {"df": df}
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
-                    exec(code, exec_globals)
+                    try:
+                        exec(code, exec_globals)
+                    except Exception as e:
+                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
 
                 output = buffer.getvalue()
 
-                # Mostrar salida impresa
                 if output.strip():
-                    st.markdown("### 📋 Resultado (print):")
-                    st.code(output)
-
-                # Mostrar gráfico si existe
-                if plt.get_fignums():
-                    st.markdown("### 📊 Gráfico generado:")
-                    st.pyplot(plt.gcf())
-                    plt.clf()
-
-                # Mostrar nuevos DataFrames
-                for var, val in exec_globals.items():
-                    if isinstance(val, pd.DataFrame) and var != "df":
-                        st.markdown(f"### 📋 DataFrame generado: `{var}`")
-                        st.dataframe(val, use_container_width=True)
-
-                # Mostrar métricas individuales
-                metricas = []
-                for var, val in exec_globals.items():
-                    if isinstance(val, (int, float)) and not var.startswith("__"):
-                        metricas.append((var, val))
-
-                if metricas:
-                    st.markdown("### 📈 Métricas individuales:")
-                    for var, val in metricas:
-                        st.metric(label=var, value=val)
-
-                if not output.strip() and not plt.get_fignums() and not metricas:
-                    st.info("ℹ️ Código ejecutado sin salida visible.")
+                    st.session_state.history.append("💬 Respuesta:")
+                    st.session_state.history.append(output)
+                else:
+                    st.session_state.history.append("✅ Código ejecutado sin salida.")
 
             except Exception as e:
-                st.error(f"❌ Error al ejecutar el código:\n\n{str(e)}")
+                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
+
+        st.rerun()  # Refrescar la página para mostrar el historial actualizado
+else:
+    st.warning("Por favor, sube un archivo para continuar.")
