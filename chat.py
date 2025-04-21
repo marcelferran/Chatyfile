@@ -6,7 +6,7 @@ import contextlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Configuración de la API de Gemini
+# Configurar la API de Gemini
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 except KeyError:
@@ -113,36 +113,55 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a la pregunta del usuario de forma amigable y legible.
-Si la pregunta requiere mostrar una tabla o un gráfico, genera el código Python necesario para realizar la operación y mostrar el resultado directamente usando las funciones de Streamlit (`st.table()`, `st.dataframe()`, `st.pyplot()`). Asegúrate de que el código generado sea completo y ejecutable.
-
-**Importante:** En tu respuesta de texto principal, proporciona una introducción o un resumen de los resultados. **EVITA incluir el código Python completo en tu respuesta de texto principal.** Solo menciona que se generará una tabla o un gráfico.
+Genera **únicamente** el código Python necesario para responder a la siguiente pregunta y mostrar el resultado directamente usando Streamlit (`st.table()`, `st.dataframe()`, `st.pyplot()`). Asegúrate de que el código sea completo y ejecutable.
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                answer_text = response.text.strip()
-                st.session_state.history.append(f"🤖 Chatyfile: {answer_text}")
+                code = response.text.strip("```python\n").strip("```").strip()
+                st.session_state.history.append(f"🤖 Código generado por la IA:") # Para depuración
 
-                # Intenta ejecutar el código generado (si lo hay) para mostrar tablas o gráficos
-                code_blocks = [part.text for part in response.parts if isinstance(part, genai.types.Part.from_dict({"text": ""}).__class__)]
-                if code_blocks:
-                    code = code_blocks[0].strip("```python\n").strip("```").strip()
-                    exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "st": st}
-                    buffer = io.StringIO()
+                exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "st": st}
+                buffer = io.StringIO()
+                output = None
+                error = None
+                plot_generated = False
 
-                    with contextlib.redirect_stdout(buffer):
-                        try:
-                            exec(code, exec_globals)
-                        except Exception as e:
-                            st.session_state.history.append(f"❌ Error al ejecutar el código para la visualización: {str(e)}")
-                        finally:
-                            # No necesitamos verificar plt._Gcf aquí, st.pyplot() maneja la figura activa
-                            pass
+                with contextlib.redirect_stdout(buffer):
+                    try:
+                        exec(code, exec_globals)
+                        output = buffer.getvalue()
+                        if 'plt' in exec_globals and hasattr(exec_globals['plt'], '_Gcf') and exec_globals['plt']._Gcf.get_active():
+                            plot_generated = True
+                    except Exception as e:
+                        error = str(e)
+
+                st.session_state.history.append(f"🤖 Ejecución del código:") # Para depuración
+                if output:
+                    st.session_state.history.append(f"Salida:\n{output}") # Para depuración
+                if error:
+                    st.session_state.history.append(f"Error:\n{error}") # Para depuración
+
+                st.session_state.history.append("💬 Respuesta:")
+                if plot_generated:
+                    st.pyplot(exec_globals['plt'])
+                elif output and not error:
+                    st.write(output)
+                elif error:
+                    st.error(f"Hubo un problema al generar la respuesta: {error}")
+                else:
+                    # Construir una respuesta amigable basada en la pregunta
+                    if "cuántos proveedores de urea" in pregunta.lower():
+                        urea_df = df[df['Producto'].str.contains('urea', case=False, na=False)]
+                        num_proveedores = urea_df['Proveedor'].nunique()
+                        st.write(f"Encontré **{num_proveedores}** proveedores diferentes de urea en tus datos.")
+                    else:
+                        st.write("La operación se realizó con éxito, pero no se generó una salida de texto directa.")
+
 
             except Exception as e:
-                st.session_state.history.append(f"❌ Error al procesar la pregunta: {str(e)}")
+                st.session_state.history.append(f"❌ Error general al procesar: {str(e)}")
 
         st.rerun()
 else:
