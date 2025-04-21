@@ -33,7 +33,7 @@ st.markdown("""
         border-radius: 10px;
     }
     .header img {
-        width: 200px; /* Logo más grande */
+        width: 400px; /* Logo más grande */
         margin-right: 20px;
     }
     h1 {
@@ -44,11 +44,6 @@ st.markdown("""
     .css-1d391kg {
         background-color: #ffffff;
         border-right: 2px solid #1f77b4;
-    }
-    .stButton>button {
-        background-color: #ff7f0e;
-        color: white;
-        border-radius: 5px;
     }
     .footer {
         text-align: center;
@@ -65,7 +60,7 @@ st.markdown("""
 
 # Cabecera con logotipo a la izquierda
 st.markdown('<div class="header">', unsafe_allow_html=True)
-st.image("logo.jpeg", width=200)  # Logo más grande
+st.image("logo.jpeg", width=400)  # Logo más grande
 st.title("📄 Chatyfile")
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -77,14 +72,13 @@ st.markdown("""
 
 # Barra lateral
 with st.sidebar:
-    st.header("🤖 Opciones")
+    st.header("📂 Opciones")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
     st.markdown("---")
-    st.subheader("⚠️ Instrucciones")
+    st.subheader("ℹ️ Instrucciones")
     st.write("1. Sube el archivo con tus datos.")
-    st.write("2. Escribe tu pregunta.")
-    st.write("3. Presiona 'Enviar' para obtener la respuesta.")
-    st.write("4. Escribe 'salir' para finalizar.")
+    st.write("2. Escribe tu pregunta y presiona 'Enter'.")
+    st.write("3. Escribe 'salir' para finalizar.")
 
 # Pie de página
 st.markdown("""
@@ -102,7 +96,14 @@ if "chat" not in st.session_state:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
-    st.write("Columnas disponibles:", ", ".join(df.columns))
+    
+    # Resumen del archivo
+    num_rows, num_cols = df.shape
+    st.write("**Resumen del archivo:**")
+    st.write(f"- Número de filas: {num_rows}")
+    st.write(f"- Número de columnas: {num_cols}")
+    st.write("**Nombres de las columnas:**")
+    st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
 
     # Inicializar el modelo y el chat si no está inicializado
     if st.session_state.chat is None:
@@ -117,20 +118,22 @@ if uploaded_file is not None:
                 "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
             }
         ])
-        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu archivo.")
+        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
         st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
     # Mostrar historial de la conversación
     for message in st.session_state.history:
         st.write(message)
 
-    # Campo para la pregunta
-    pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+    # Formulario para la pregunta (se envía con "Enter")
+    with st.form(key='pregunta_form', clear_on_submit=True):
+        pregunta = st.text_input("🤔 Tu pregunta:", key="pregunta_input")
+        st.form_submit_button(label="Enviar", disabled=True)  # Botón deshabilitado, solo "Enter" funciona
 
-    # Botón para enviar la pregunta
-    if st.button("Enviar"):
+    # Procesar la pregunta si se envía el formulario
+    if pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.history.append("👋 Adios.")
+            st.session_state.history.append("👋 Programa finalizado.")
             st.session_state.chat = None  # Reiniciar el chat
             st.rerun()
         else:
@@ -146,7 +149,7 @@ Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("`python\n").strip("`").strip()
+                code = response.text.strip("```python\n").strip("```").strip()
 
                 exec_globals = {"df": df}
                 buffer = io.StringIO()
