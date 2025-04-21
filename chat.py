@@ -11,6 +11,7 @@ import numpy as np
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 st.title("📊 Chatyfile")
+st.markdown("Hazle preguntas a tu archivo CSV usando Gemini ✨")
 
 uploaded_file = st.file_uploader("📁 Sube un archivo CSV", type=["csv"])
 
@@ -21,6 +22,7 @@ if "chat" not in st.session_state:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
+    st.markdown("### 👁️ Vista previa del archivo")
     st.dataframe(df.head())
 
     if st.session_state.chat is None:
@@ -36,14 +38,16 @@ if uploaded_file is not None:
             }
         ])
 
-    pregunta = st.text_input("🤖 Pregunta sobre el archivo (escribe 'salir' para reiniciar):")
+    st.markdown("### 🧠 Pregunta para Gemini:")
+    pregunta = st.text_input("Haz una pregunta sobre el archivo (escribe 'salir' para reiniciar):")
 
     if pregunta:
         if pregunta.lower() == "salir":
             st.session_state.chat = None
             st.rerun()
         else:
-            prompt = f"""
+            with st.spinner("🔄 Obteniendo respuesta de Gemini..."):
+                prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria con estas columnas: {', '.join(df.columns)}.
 No intentes volver a cargarlo, ya está disponible.
 
@@ -51,11 +55,13 @@ Genera solo el código Python para responder la siguiente pregunta:
 {pregunta}
 """
 
-            response = st.session_state.chat.send_message(prompt)
-            code = response.text.strip("```python\n").strip("```").strip()
+                response = st.session_state.chat.send_message(prompt)
+                code = response.text.strip("```python\n").strip("```").strip()
 
+            st.markdown("### 🤖 Respuesta de Gemini (código):")
             st.code(code, language="python")
 
+            st.markdown("### ▶️ Ejecutando código...")
             try:
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "np": np}
                 buffer = io.StringIO()
@@ -65,28 +71,29 @@ Genera solo el código Python para responder la siguiente pregunta:
 
                 output = buffer.getvalue()
 
-                # Mostrar salida por print()
                 if output:
-                    st.text("🖨️ Resultado del código:")
+                    st.markdown("### 🖨️ Resultado del código:")
                     st.code(output)
 
                 # Mostrar gráfico si se generó
                 if plt.get_fignums():
+                    st.markdown("### 📊 Gráfico generado:")
                     st.pyplot(plt.gcf())
                     plt.clf()
 
-                # Mostrar variables creadas tipo DataFrame
+                # Mostrar variables nuevas tipo DataFrame
                 for var, val in exec_globals.items():
                     if isinstance(val, pd.DataFrame) and var != "df":
+                        st.markdown(f"### 📋 DataFrame generado: `{var}`")
                         st.dataframe(val)
 
                 # Mostrar valores individuales como métricas
                 for var, val in exec_globals.items():
                     if isinstance(val, (int, float)) and not var.startswith("__"):
-                        st.metric(label=var, value=val)
+                        st.metric(label=f"📈 {var}", value=val)
 
                 if not output and not plt.get_fignums():
-                    st.success("✅ Código ejecutado sin salida visible.")
+                    st.success("✅ Código ejecutado, pero no hubo salida visible.")
 
             except Exception as e:
                 st.error(f"❌ Error al ejecutar el código:\n\n{str(e)}")
