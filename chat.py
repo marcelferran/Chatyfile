@@ -150,6 +150,7 @@ if uploaded_file is not None:
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
+NO INTENTES CARGAR EL DATAFRAME CON pd.read_csv, ya está cargado como `df`.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
@@ -189,12 +190,7 @@ Pregunta:
                     plt.clf()  # Limpiar la figura para la próxima gráfica
                 elif output:
                     # Mostrar salida de texto como tabla si es un valor simple
-                    try:
-                        # Intentar convertir la salida a un número o string
-                        value = float(output) if output.replace(".", "").isdigit() else output
-                        st.table(pd.DataFrame({"Resultado": [value]}))
-                    except:
-                        st.write(output)
+                    st.table(pd.DataFrame({"Resultado": [output]}))
                 else:
                     # Intentar mostrar un DataFrame si el código lo genera
                     for key, value in exec_globals.items():
