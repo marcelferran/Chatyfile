@@ -72,10 +72,10 @@ st.markdown("""
 
 # Barra lateral
 with st.sidebar:
-    st.header("📂 Opciones")
+    st.header("🤖 Opciones")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
     st.markdown("---")
-    st.subheader("ℹ️ Instrucciones")
+    st.subheader("⚠️ Instrucciones")
     st.write("1. Sube el archivo con tus datos.")
     st.write("2. Escribe tu pregunta y presiona 'Enter'.")
     st.write("3. Escribe 'salir' para finalizar.")
@@ -127,13 +127,13 @@ if uploaded_file is not None:
 
     # Formulario para la pregunta (se envía con "Enter")
     with st.form(key='pregunta_form', clear_on_submit=True):
-        pregunta = st.text_input("🤔 Tu pregunta:", key="pregunta_input")
-        st.form_submit_button(label="Enviar", disabled=True)  # Botón deshabilitado, solo "Enter" funciona
+        pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+        st.form_submit_button(label="Enviar", disabled=False)  # Botón deshabilitado, solo "Enter" funciona
 
     # Procesar la pregunta si se envía el formulario
     if pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.history.append("👋 Programa finalizado.")
+            st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None  # Reiniciar el chat
             st.rerun()
         else:
