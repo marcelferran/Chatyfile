@@ -156,7 +156,7 @@ Pregunta:
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
+                # st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
 
                 exec_globals = {"df": df}
                 buffer = io.StringIO()
