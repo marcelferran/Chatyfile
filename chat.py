@@ -45,6 +45,11 @@ st.markdown("""
         background-color: #ffffff;
         border-right: 2px solid #1f77b4;
     }
+    .stButton>button {
+        background-color: #ff7f0e;
+        color: white;
+        border-radius: 5px;
+    }
     .footer {
         text-align: center;
         padding: 10px;
@@ -77,7 +82,7 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("⚠️ Instrucciones")
     st.write("1. Sube el archivo con tus datos.")
-    st.write("2. Escribe tu pregunta y presiona 'Enter'.")
+    st.write("2. Escribe tu pregunta y presiona 'Enter' o haz clic en 'Enviar'.")
     st.write("3. Escribe 'salir' para finalizar.")
 
 # Pie de página
@@ -125,10 +130,10 @@ if uploaded_file is not None:
     for message in st.session_state.history:
         st.write(message)
 
-    # Formulario para la pregunta (se envía con "Enter")
+    # Formulario para la pregunta (se envía con "Enter" o botón)
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.form_submit_button(label="Enviar", disabled=True)  # Botón deshabilitado
+        submitted = st.form_submit_button(label="Enviar", disabled=False)  # Botón habilitado
 
     # Procesar la pregunta si se envía el formulario
     if submitted and pregunta:
