@@ -211,3 +211,5 @@ Pregunta:
                                     break
                             else:
                                 st.success("✅ Código ejecutado sin salida visible.")
+            except Exception as e:
+                st.error(f"❌ Error inesperado: {str(e)}")
