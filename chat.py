@@ -181,34 +181,33 @@ Pregunta:
 
                 if error_during_exec:
                     st.session_state.history.append(f"❌ Error al ejecutar el código: {error_during_exec}")
-                    st.rerun()
-
-                # Mostrar gráfico si existe
-                if plt.get_fignums():
-                    st.pyplot(plt.gcf())
-                    plt.clf()
-
-                # Si hay texto en el buffer (como por print), lo mostramos
-                if output:
-                    # Si parece una tabla, tratar de evaluarla como tal
-                    try:
-                        possible_df = eval(output, exec_globals)
-                        if isinstance(possible_df, pd.DataFrame):
-                            st.dataframe(posible_df)
-                        else:
-                            st.code(output)
-                    except:
-                        st.code(output)
                 else:
-                    # Buscar variables tipo DataFrame distintas de 'df'
-                    for key, val in exec_globals.items():
-                        if isinstance(val, pd.DataFrame) and key != "df":
-                            st.dataframe(val)
-                            break
+                    # Mostrar gráfico si existe
+                    if plt.get_fignums():
+                        st.pyplot(plt.gcf())
+                        plt.clf()
+
+                    # Si hay texto en el buffer (como por print), lo mostramos
+                    if output:
+                        # Si parece una tabla, tratar de evaluarla como tal
+                        try:
+                            possible_df = eval(output, exec_globals)
+                            if isinstance(possible_df, pd.DataFrame):
+                                st.dataframe(posible_df)
+                            else:
+                                st.code(output)
+                        except:
+                            st.code(output)
                     else:
+                        # Buscar variables tipo DataFrame distintas de 'df'
                         for key, val in exec_globals.items():
-                            if key.startswith("num_") and isinstance(val, (int, float, str)):
-                                st.metric(label=key, value=val)
+                            if isinstance(val, pd.DataFrame) and key != "df":
+                                st.dataframe(val)
                                 break
                         else:
-                            st.success("✅ Código ejecutado sin salida visible.")
+                            for key, val in exec_globals.items():
+                                if key.startswith("num_") and isinstance(val, (int, float, str)):
+                                    st.metric(label=key, value=val)
+                                    break
+                            else:
+                                st.success("✅ Código ejecutado sin salida visible.")
