@@ -1,2 +1,2 @@
 # Chat
-Amazing app to chat with your CSV and XLSX files
+Amazing app to chat with your files
