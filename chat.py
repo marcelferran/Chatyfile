@@ -128,10 +128,10 @@ if uploaded_file is not None:
     # Formulario para la pregunta (se envía con "Enter")
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        st.form_submit_button(label="Enviar", disabled=False)  # Botón deshabilitado, solo "Enter" funciona
+        submitted = st.form_submit_button(label="Enviar", disabled=True)  # Botón deshabilitado
 
     # Procesar la pregunta si se envía el formulario
-    if pregunta:
+    if submitted and pregunta:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None  # Reiniciar el chat
