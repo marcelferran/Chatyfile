@@ -6,7 +6,7 @@ import contextlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Configurar la API de Gemini
+# Configuración de la API de Gemini
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 except KeyError:
@@ -114,10 +114,9 @@ Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a la pregunta del usuario de forma amigable y legible.
-Si la pregunta requiere mostrar una tabla, genera el código Python necesario para crear el DataFrame resultante y luego utiliza `st.table(resultado_df)` o `st.dataframe(resultado_df)` para mostrarlo. Asegúrate de que el DataFrame resultante se llame `resultado_df`.
-Si la pregunta requiere mostrar una gráfica, genera el código Python completo utilizando las bibliotecas `matplotlib` o `seaborn` (plt y sns) para crear la figura y los ejes, y luego finaliza el código con `plt.show()`.
+Si la pregunta requiere mostrar una tabla o un gráfico, genera el código Python necesario para realizar la operación y mostrar el resultado directamente usando las funciones de Streamlit (`st.table()`, `st.dataframe()`, `st.pyplot()`). Asegúrate de que el código generado sea completo y ejecutable.
 
-**Importante:** En tu respuesta de texto principal, describe los resultados o la gráfica. **NO INCLUYAS el código Python en tu respuesta de texto principal.** El código generado se ejecutará por separado.
+**Importante:** En tu respuesta de texto principal, proporciona una introducción o un resumen de los resultados. **EVITA incluir el código Python completo en tu respuesta de texto principal.** Solo menciona que se generará una tabla o un gráfico.
 
 Pregunta:
 {pregunta}
@@ -139,9 +138,8 @@ Pregunta:
                         except Exception as e:
                             st.session_state.history.append(f"❌ Error al ejecutar el código para la visualización: {str(e)}")
                         finally:
-                            # Mostrar el gráfico si plt.show() fue llamado
-                            if 'plt' in exec_globals and hasattr(exec_globals['plt'], '_Gcf') and exec_globals['plt']._Gcf.get_active():
-                                st.pyplot(exec_globals['plt'])
+                            # No necesitamos verificar plt._Gcf aquí, st.pyplot() maneja la figura activa
+                            pass
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar la pregunta: {str(e)}")
