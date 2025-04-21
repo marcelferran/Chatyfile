@@ -100,7 +100,7 @@ if "chat" not in st.session_state:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
-    
+
     # Resumen del archivo
     st.write("**Resumen del archivo:**")
     st.write(f"- Número de filas: {df.shape[0]}")
@@ -181,20 +181,28 @@ Pregunta:
                 if plt.get_fignums():
                     st.pyplot(plt.gcf())
                     plt.clf()
-                elif output:
-                    st.text(output)
+
+                # Si hay texto en el buffer (como por print), lo mostramos
+                if output:
+                    st.code(output)
+
+                # También intentamos capturar cualquier variable simple como resultado numérico
                 else:
-                    # Buscar nuevos DataFrames en el espacio de ejecución
                     for key, val in exec_globals.items():
-                        if isinstance(val, pd.DataFrame) and key != "df":
-                            st.dataframe(val)
+                        if key.startswith("num_") and isinstance(val, (int, float, str)):
+                            st.metric(label=key, value=val)
                             break
                     else:
-                        st.success("✅ Código ejecutado sin salida.")
+                        for key, val in exec_globals.items():
+                            if isinstance(val, pd.DataFrame) and key != "df":
+                                st.dataframe(val)
+                                break
+                        else:
+                            st.success("✅ Código ejecutado sin salida visible.")
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
+                st.rerun()
 
-        st.rerun()
 else:
     st.warning("Por favor, sube un archivo para continuar.")
