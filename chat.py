@@ -3,8 +3,6 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Configurar la API de Gemini
 try:
@@ -103,7 +101,7 @@ if "chat" not in st.session_state:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
-
+    
     # Resumen del archivo
     num_rows, num_cols = df.shape
     st.write("**Resumen del archivo:**")
@@ -152,38 +150,30 @@ NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
-Asegúrate de que el código generado sea completo y ejecutable para responder a la pregunta.
-Si la respuesta es un DataFrame, asegúrate de que la última línea del código sea simplemente el nombre del DataFrame para que se imprima.
-Si la respuesta es un gráfico, asegúrate de importar las bibliotecas necesarias (`matplotlib.pyplot as plt`, `seaborn as sns`) y finalizar el código con `plt.show()`.
-Si la respuesta es un valor numérico, asegúrate de que la última línea del código sea imprimir ese valor.
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"🤖 Código generado:\n{code}")  # Para depuración
+                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
 
-                exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns}
+                exec_globals = {"df": df}
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
                     try:
                         exec(code, exec_globals)
-                        output = buffer.getvalue()
-                        if 'plt' in exec_globals and hasattr(exec_globals['plt'], '_Gcf') and exec_globals['plt']._Gcf.get_active():
-                            st.pyplot(exec_globals['plt'])
-                        elif 'resultado_df' in exec_globals:
-                            st.dataframe(exec_globals['resultado_df'])
-                        elif 'resultado' in exec_globals:
-                            st.write(exec_globals['resultado'])
-                        elif output.strip():
-                            st.write(output)
-                        else:
-                            st.write("✅ Código ejecutado sin salida visible directa.")
-
                     except Exception as e:
                         st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
+
+                output = buffer.getvalue()
+
+                if output.strip():
+                    st.session_state.history.append("💬 Respuesta:")
+                    st.session_state.history.append(output)
+                else:
+                    st.session_state.history.append("✅ Código ejecutado sin salida.")
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
