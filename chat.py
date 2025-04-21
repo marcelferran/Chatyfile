@@ -13,7 +13,7 @@ except KeyError:
     st.error("La clave GEMINI_API_KEY no está configurada en los Secrets de Streamlit Cloud.")
     st.stop()
 
-# Configuración de la página (sin cambios)
+# Configuración de la página
 st.set_page_config(
     page_title="Chatyfile",
     page_icon="📄",
@@ -21,26 +21,63 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS personalizados (sin cambios)
+# Estilos CSS personalizados
 st.markdown("""
     <style>
-    /* ... tus estilos CSS ... */
+    .stApp {
+        background-color: #f0f2f6;
+    }
+    .header {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: #1f77b4;
+        border-radius: 10px;
+    }
+    .header img {
+        width: 400px; /* Logo más grande */
+        margin-right: 20px;
+    }
+    h1 {
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+    }
+    .css-1d391kg {
+        background-color: #ffffff;
+        border-right: 2px solid #1f77b4;
+    }
+    .stButton>button {
+        background-color: #ff7f0e;
+        color: white;
+        border-radius: 5px;
+    }
+    .footer {
+        text-align: center;
+        padding: 10px;
+        background-color: #1f77b4;
+        color: white;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        border-top: 2px solid #ffffff;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Cabecera (sin cambios)
+# Cabecera con logotipo a la izquierda
 st.markdown('<div class="header">', unsafe_allow_html=True)
-st.image("logo.jpeg", width=400)
+st.image("logo.jpeg", width=400)  # Logo más grande
 st.title("📄 Chatyfile")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Bienvenida (sin cambios)
+# Bienvenida
 st.markdown("""
     <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
     <p style='text-align: center;'>Sube tu archivo y haz preguntas sobre tus datos</p>
 """, unsafe_allow_html=True)
 
-# Barra lateral (sin cambios)
+# Barra lateral
 with st.sidebar:
     st.header("🤖 Opciones")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
@@ -50,14 +87,14 @@ with st.sidebar:
     st.write("2. Escribe tu pregunta y presiona 'Enter' o haz clic en 'Enviar'.")
     st.write("3. Escribe 'salir' para finalizar.")
 
-# Pie de página (sin cambios)
+# Pie de página
 st.markdown("""
     <div class="footer">
         <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Inicializar estado de la sesión (sin cambios)
+# Inicializar estado de la sesión
 if "chat" not in st.session_state:
     st.session_state.chat = None
     st.session_state.history = []
@@ -67,7 +104,7 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
 
-    # Resumen del archivo (sin cambios)
+    # Resumen del archivo
     num_rows, num_cols = df.shape
     st.write("**Resumen del archivo:**")
     st.write(f"- Número de filas: {num_rows}")
@@ -95,16 +132,16 @@ if uploaded_file is not None:
     for message in st.session_state.history:
         st.write(message)
 
-    # Formulario para la pregunta
+    # Formulario para la pregunta (se envía con "Enter" o botón)
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.form_submit_button(label="Enviar", disabled=False)
+        submitted = st.form_submit_button(label="Enviar", disabled=False)  # Botón habilitado
 
     # Procesar la pregunta si se envía el formulario
     if submitted and pregunta:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
-            st.session_state.chat = None
+            st.session_state.chat = None  # Reiniciar el chat
             st.rerun()
         else:
             try:
@@ -113,54 +150,44 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a la siguiente pregunta de forma amigable y legible.
-Si es necesario mostrar datos, genera **únicamente** el código Python para hacerlo usando Streamlit (`st.table()`, `st.dataframe()`, `st.metric()`, `st.write()`) y/o Matplotlib/Seaborn (`plt.show()`). Asegúrate de que el código sea completo y ejecutable.
-
-**Importante:** Tu respuesta de texto debe explicar los resultados o la acción realizada. **EVITA incluir bloques de código Python completos en tu respuesta de texto.** Solo menciona que se mostrará una tabla, un gráfico, una métrica, etc.
+Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+Asegúrate de que el código generado sea completo y ejecutable para responder a la pregunta.
+Si la respuesta es un DataFrame, asegúrate de que la última línea del código sea simplemente el nombre del DataFrame para que se imprima.
+Si la respuesta es un gráfico, asegúrate de importar las bibliotecas necesarias (`matplotlib.pyplot as plt`, `seaborn as sns`) y finalizar el código con `plt.show()`.
+Si la respuesta es un valor numérico, asegúrate de que la última línea del código sea imprimir ese valor.
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                full_response = response.text.strip()
-                st.session_state.history.append(f"🤖 Chatyfile: {full_response}")
+                code = response.text.strip("```python\n").strip("```").strip()
+                st.session_state.history.append(f"🤖 Código generado:\n{code}")  # Para depuración
 
-                code = ""
-                # Buscar bloques de código en la respuesta (más robusto)
-                code_blocks = [part.text for part in response.parts if isinstance(part, genai.types.Part.from_dict({"text": ""}).__class__)]
-                if code_blocks:
-                    code = code_blocks[0].strip("```python\n").strip("```").strip()
-                    st.session_state.history.append(f"🤖 Código generado por la IA:") # Para depuración
-                    st.code(code) # Mostrar el código generado (temporalmente para depuración)
-
-                exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "st": st}
+                exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns}
                 buffer = io.StringIO()
-                output = None
-                error = None
-                plot_generated = False
 
                 with contextlib.redirect_stdout(buffer):
                     try:
                         exec(code, exec_globals)
                         output = buffer.getvalue()
                         if 'plt' in exec_globals and hasattr(exec_globals['plt'], '_Gcf') and exec_globals['plt']._Gcf.get_active():
-                            plot_generated = True
+                            st.pyplot(exec_globals['plt'])
+                        elif 'resultado_df' in exec_globals:
+                            st.dataframe(exec_globals['resultado_df'])
+                        elif 'resultado' in exec_globals:
+                            st.write(exec_globals['resultado'])
+                        elif output.strip():
+                            st.write(output)
+                        else:
+                            st.write("✅ Código ejecutado sin salida visible directa.")
+
                     except Exception as e:
-                        error = str(e)
-
-                st.session_state.history.append(f"🤖 Ejecución del código:") # Para depuración
-                if output:
-                    st.session_state.history.append(f"Salida (print): {output}") # Para depuración
-                if error:
-                    st.session_state.history.append(f"Error al ejecutar el código: {error}") # Para depuración
-
-                if plot_generated:
-                    st.pyplot(exec_globals['plt'])
-                # No necesitamos mostrar output aquí, se espera que st.write en el código generado lo haga
+                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
 
             except Exception as e:
-                st.session_state.history.append(f"❌ Error general al procesar: {str(e)}")
+                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-        st.rerun()
+        st.rerun()  # Refrescar la página para mostrar el historial actualizado
 else:
     st.warning("Por favor, sube un archivo para continuar.")
