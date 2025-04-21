@@ -149,13 +149,14 @@ Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"📄 Código generado:\n{code}")
+                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
 
                 exec_globals = {"df": df}
                 buffer = io.StringIO()
