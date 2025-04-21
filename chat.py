@@ -190,10 +190,11 @@ Pregunta:
 
                 # Si hay texto en el buffer (como por print), lo mostramos
                 if output:
+                    # Si parece una tabla, tratar de evaluarla como tal
                     try:
                         possible_df = eval(output, exec_globals)
                         if isinstance(possible_df, pd.DataFrame):
-                            st.dataframe(possible_df)
+                            st.dataframe(posible_df)
                         else:
                             st.code(output)
                     except:
