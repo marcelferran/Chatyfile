@@ -155,11 +155,10 @@ Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                # code = response.text.strip("```python\n").strip("```").strip()      # ==> Activar para ver el codigo utilizado para generar la respuesta
-
-                # Correcciones automáticas de errores comunes
-                code = code.replace("rint(", "print(")
-                code = code.replace("figsize=(8, 6)", "figsize=(4.8, 3.6)")
+                code = response.text.strip("```python\n").strip("```").strip()
+                
+                # Correcciones automáticas al código generado
+                code = code.replace("rint(", "print(").replace("figsize=(8, 6)", "figsize=(4.8, 3.6)")
 
                 exec_globals = {
                     "df": df,
@@ -170,46 +169,46 @@ Pregunta:
                 }
 
                 buffer = io.StringIO()
+                error_during_exec = None
 
-                with contextlib.redirect_stdout(buffer):
-                    try:
+                try:
+                    with contextlib.redirect_stdout(buffer):
                         exec(code, exec_globals)
-                    except Exception as e:
-                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
-                        st.rerun()
+                except Exception as e:
+                    error_during_exec = str(e)
 
                 output = buffer.getvalue().strip()
+
+                if error_during_exec:
+                    st.session_state.history.append(f"❌ Error al ejecutar el código: {error_during_exec}")
+                    st.rerun()
 
                 # Mostrar gráfico si existe
                 if plt.get_fignums():
                     st.pyplot(plt.gcf())
                     plt.clf()
 
-                # Si hay texto en el buffer (como por print), mostrar como código
+                # Si hay texto en el buffer (como por print), lo mostramos
                 if output:
-                    # Intentar parsear el output como tabla si parece estructurado
+                    # Si parece una tabla, tratar de evaluarla como tal
                     try:
-                        lines = output.split("\n")
-                        if len(lines) > 1 and all("," in l or "\t" in l for l in lines):
-                            # Convertir a DataFrame si es una tabla delimitada
-                            delimiter = "," if "," in lines[0] else "\t"
-                            df_output = pd.read_csv(io.StringIO(output), sep=delimiter)
-                            st.dataframe(df_output)
+                        possible_df = eval(output, exec_globals)
+                        if isinstance(possible_df, pd.DataFrame):
+                            st.dataframe(possible_df)
                         else:
                             st.code(output)
                     except:
                         st.code(output)
-
                 else:
-                    # Intentar mostrar una variable resultante
+                    # Buscar variables tipo DataFrame distintas de 'df'
                     for key, val in exec_globals.items():
-                        if key.startswith("num_") and isinstance(val, (int, float, str)):
-                            st.metric(label=key, value=val)
+                        if isinstance(val, pd.DataFrame) and key != "df":
+                            st.dataframe(val)
                             break
                     else:
                         for key, val in exec_globals.items():
-                            if isinstance(val, pd.DataFrame) and key != "df":
-                                st.dataframe(val)
+                            if key.startswith("num_") and isinstance(val, (int, float, str)):
+                                st.metric(label=key, value=val)
                                 break
                         else:
                             st.success("✅ Código ejecutado sin salida visible.")
