@@ -147,16 +147,15 @@ if uploaded_file is not None:
         else:
             try:
                 prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(df.columns)}.
+Tienes un DataFrame de pandas llamado `df` cargado en memoria con las columnas: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 NO INTENTES CARGAR EL DATAFRAME CON pd.read_csv, ya está cargado como `df`.
 
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
-Para resultados numéricos o tabulares, devuelve un DataFrame o un valor claro.
-Para gráficas (barras, líneas, pastel, boxplot, etc.), usa matplotlib o seaborn con un tamaño de figura adecuado (por ejemplo, figsize=(8, 6)).
-Para cálculos estadísticos (media, mediana, desviación estándar, correlaciones, etc.), devuelve el resultado en un formato claro, preferiblemente como DataFrame.
+Escribe solo el código Python necesario para responder la pregunta.
+Usa búsquedas flexibles para productos como 'urea' (por ejemplo, .str.contains('urea', case=False, na=False)) para manejar variaciones (mayúsculas/minúsculas, 'Urea 46%', 'urea granulada').
+Devuelve resultados numéricos o tabulares como DataFrame o valor claro.
+Para gráficas (barras, líneas, pastel, boxplot), usa matplotlib/seaborn con figsize=(8, 6).
+Para cálculos estadísticos (media, mediana, etc.), devuelve el resultado como DataFrame o valor claro.
 
 Pregunta:
 {pregunta}
@@ -185,14 +184,11 @@ Pregunta:
 
                 # Mostrar resultados de forma amigable
                 if "plt" in code or "sns" in code:
-                    # Mostrar gráfica si el código genera una
                     st.pyplot(plt.gcf())
-                    plt.clf()  # Limpiar la figura para la próxima gráfica
+                    plt.clf()
                 elif output:
-                    # Mostrar salida de texto como tabla si es un valor simple
                     st.table(pd.DataFrame({"Resultado": [output]}))
                 else:
-                    # Intentar mostrar un DataFrame si el código lo genera
                     for key, value in exec_globals.items():
                         if isinstance(value, pd.DataFrame) and key != "df":
                             st.dataframe(value)
@@ -203,6 +199,6 @@ Pregunta:
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-        st.rerun()  # Refrescar la página para mostrar el historial actualizado
+        st.rerun()
 else:
     st.warning("Por favor, sube un archivo para continuar.")
