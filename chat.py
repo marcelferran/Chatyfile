@@ -36,17 +36,13 @@ st.markdown("""
         border-radius: 10px;
     }
     .header img {
-        width: 400px; /* Logo más grande */
+        width: 400px;
         margin-right: 20px;
     }
     h1 {
         color: #ffffff;
         font-family: 'Arial', sans-serif;
         margin: 0;
-    }
-    .css-1d391kg {
-        background-color: #ffffff;
-        border-right: 2px solid #1f77b4;
     }
     .stButton>button {
         background-color: #ff7f0e;
@@ -66,9 +62,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cabecera con logotipo a la izquierda
+# Cabecera con logotipo
 st.markdown('<div class="header">', unsafe_allow_html=True)
-st.image("logo.jpeg", width=400)  # Logo más grande
+st.image("logo.jpeg", width=400)
 st.title("📄 Chatyfile")
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -95,25 +91,24 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Inicializar estado de la sesión
+# Estado inicial de sesión
 if "chat" not in st.session_state:
     st.session_state.chat = None
     st.session_state.history = []
 
-# Lógica principal de la app
+# Lógica principal
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
     
     # Resumen del archivo
-    num_rows, num_cols = df.shape
     st.write("**Resumen del archivo:**")
-    st.write(f"- Número de filas: {num_rows}")
-    st.write(f"- Número de columnas: {num_cols}")
+    st.write(f"- Número de filas: {df.shape[0]}")
+    st.write(f"- Número de columnas: {df.shape[1]}")
     st.write("**Nombres de las columnas:**")
     st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
 
-    # Inicializar el modelo y el chat si no está inicializado
+    # Inicializar Gemini si no está hecho
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-2.0-flash')
         st.session_state.chat = model.start_chat(history=[
@@ -129,20 +124,19 @@ if uploaded_file is not None:
         st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
         st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    # Mostrar historial de la conversación
+    # Mostrar historial
     for message in st.session_state.history:
         st.write(message)
 
-    # Formulario para la pregunta (se envía con "Enter" o botón)
+    # Entrada de pregunta
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.form_submit_button(label="Enviar", disabled=False)  # Botón habilitado
+        submitted = st.form_submit_button(label="Enviar")
 
-    # Procesar la pregunta si se envía el formulario
     if submitted and pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.history.append("👋 Adios.")
-            st.session_state.chat = None  # Reiniciar el chat
+            st.session_state.history.append("👋 Adiós.")
+            st.session_state.chat = None
             st.rerun()
         else:
             try:
@@ -162,7 +156,7 @@ Pregunta:
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
+                st.session_state.history.append(f"📄 Código generado:\n```python\n{code}\n```")
 
                 exec_globals = {
                     "df": df,
@@ -171,6 +165,7 @@ Pregunta:
                     "sns": sns,
                     "np": np
                 }
+
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
@@ -182,19 +177,20 @@ Pregunta:
 
                 output = buffer.getvalue().strip()
 
-                # Mostrar resultados de forma amigable
-                if "plt" in code or "sns" in code:
+                # Mostrar gráfico si existe
+                if plt.get_fignums():
                     st.pyplot(plt.gcf())
                     plt.clf()
                 elif output:
-                    st.table(pd.DataFrame({"Resultado": [output]}))
+                    st.text(output)
                 else:
-                    for key, value in exec_globals.items():
-                        if isinstance(value, pd.DataFrame) and key != "df":
-                            st.dataframe(value)
+                    # Buscar nuevos DataFrames en el espacio de ejecución
+                    for key, val in exec_globals.items():
+                        if isinstance(val, pd.DataFrame) and key != "df":
+                            st.dataframe(val)
                             break
                     else:
-                        st.session_state.history.append("✅ Código ejecutado sin salida.")
+                        st.success("✅ Código ejecutado sin salida.")
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
