@@ -10,6 +10,7 @@ import numpy as np
 # Configuración inicial
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
+st.set_page_config(page_title="Chatyfile", layout="wide")
 st.title("📊 Chatyfile")
 st.markdown("Hazle preguntas a tu archivo CSV usando Gemini ✨")
 
@@ -23,7 +24,7 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
     st.markdown("### 👁️ Vista previa del archivo")
-    st.dataframe(df.head())
+    st.dataframe(df.head(), use_container_width=True)
 
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-1.5-pro')
@@ -56,12 +57,13 @@ Genera solo el código Python para responder la siguiente pregunta:
 """
 
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python\n").strip("```").strip()
+                code = response.text.strip("```python").strip("```").strip()
 
-            st.markdown("### 🤖 Respuesta de Gemini (código):")
+            st.markdown("### 🤖 Respuesta de Gemini:")
             st.code(code, language="python")
 
             st.markdown("### ▶️ Ejecutando código...")
+
             try:
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "np": np}
                 buffer = io.StringIO()
@@ -71,29 +73,36 @@ Genera solo el código Python para responder la siguiente pregunta:
 
                 output = buffer.getvalue()
 
-                if output:
-                    st.markdown("### 🖨️ Resultado del código:")
+                # Mostrar salida impresa
+                if output.strip():
+                    st.markdown("### 📋 Resultado (print):")
                     st.code(output)
 
-                # Mostrar gráfico si se generó
+                # Mostrar gráfico si existe
                 if plt.get_fignums():
                     st.markdown("### 📊 Gráfico generado:")
                     st.pyplot(plt.gcf())
                     plt.clf()
 
-                # Mostrar variables nuevas tipo DataFrame
+                # Mostrar nuevos DataFrames
                 for var, val in exec_globals.items():
                     if isinstance(val, pd.DataFrame) and var != "df":
                         st.markdown(f"### 📋 DataFrame generado: `{var}`")
-                        st.dataframe(val)
+                        st.dataframe(val, use_container_width=True)
 
-                # Mostrar valores individuales como métricas
+                # Mostrar métricas individuales
+                metricas = []
                 for var, val in exec_globals.items():
                     if isinstance(val, (int, float)) and not var.startswith("__"):
-                        st.metric(label=f"📈 {var}", value=val)
+                        metricas.append((var, val))
 
-                if not output and not plt.get_fignums():
-                    st.success("✅ Código ejecutado, pero no hubo salida visible.")
+                if metricas:
+                    st.markdown("### 📈 Métricas individuales:")
+                    for var, val in metricas:
+                        st.metric(label=var, value=val)
+
+                if not output.strip() and not plt.get_fignums() and not metricas:
+                    st.info("ℹ️ Código ejecutado sin salida visible.")
 
             except Exception as e:
                 st.error(f"❌ Error al ejecutar el código:\n\n{str(e)}")
