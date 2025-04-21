@@ -3,6 +3,9 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 # Configurar la API de Gemini
 try:
@@ -150,6 +153,9 @@ NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+Para resultados numéricos o tabulares, devuelve un DataFrame o un valor claro.
+Para gráficas (barras, líneas, pastel, boxplot, etc.), usa matplotlib o seaborn con un tamaño de figura adecuado (por ejemplo, figsize=(8, 6)).
+Para cálculos estadísticos (media, mediana, desviación estándar, correlaciones, etc.), devuelve el resultado en un formato claro, preferiblemente como DataFrame.
 
 Pregunta:
 {pregunta}
@@ -158,7 +164,13 @@ Pregunta:
                 code = response.text.strip("```python\n").strip("```").strip()
                 st.session_state.history.append(f"📄 Código generado:\n{code}")  # Depuración temporal
 
-                exec_globals = {"df": df}
+                exec_globals = {
+                    "df": df,
+                    "pd": pd,
+                    "plt": plt,
+                    "sns": sns,
+                    "np": np
+                }
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
@@ -166,14 +178,35 @@ Pregunta:
                         exec(code, exec_globals)
                     except Exception as e:
                         st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
+                        st.rerun()
 
                 output = buffer.getvalue()
 
-                if output.strip():
-                    st.session_state.history.append("💬 Respuesta:")
-                    st.session_state.history.append(output)
+                # Mostrar resultados de forma amigable
+                if "plt" in code or "sns" in code:
+                    # Mostrar gráfica si el código genera una
+                    st.pyplot(plt.gcf())
+                    plt.clf()  # Limpiar la figura para la próxima gráfica
+                elif output.strip():
+                    # Mostrar salida de texto como DataFrame si es posible
+                    try:
+                        result = eval(output.strip(), exec_globals)
+                        if isinstance(result, pd.DataFrame):
+                            st.dataframe(result)
+                        elif isinstance(result, (int, float, str)):
+                            st.table(pd.DataFrame({"Resultado": [result]}))
+                        else:
+                            st.write(output)
+                    except:
+                        st.write(output)
                 else:
-                    st.session_state.history.append("✅ Código ejecutado sin salida.")
+                    # Intentar mostrar un DataFrame si el código lo genera
+                    for key, value in exec_globals.items():
+                        if isinstance(value, pd.DataFrame) and key != "df":
+                            st.dataframe(value)
+                            break
+                    else:
+                        st.session_state.history.append("✅ Código ejecutado sin salida.")
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
