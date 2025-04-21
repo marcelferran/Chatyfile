@@ -113,14 +113,25 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Genera **únicamente** el código Python necesario para responder a la siguiente pregunta y mostrar el resultado directamente usando Streamlit (`st.table()`, `st.dataframe()`, `st.pyplot()`). Asegúrate de que el código sea completo y ejecutable.
+Responde a la siguiente pregunta de forma amigable y legible.
+Si es necesario mostrar datos, genera **únicamente** el código Python para hacerlo usando Streamlit (`st.table()`, `st.dataframe()`, `st.metric()`, `st.write()`) y/o Matplotlib/Seaborn (`plt.show()`). Asegúrate de que el código sea completo y ejecutable.
+
+**Importante:** Tu respuesta de texto debe explicar los resultados o la acción realizada. **EVITA incluir bloques de código Python completos en tu respuesta de texto.** Solo menciona que se mostrará una tabla, un gráfico, una métrica, etc.
 
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"🤖 Código generado por la IA:") # Para depuración
+                full_response = response.text.strip()
+                st.session_state.history.append(f"🤖 Chatyfile: {full_response}")
+
+                code = ""
+                # Buscar bloques de código en la respuesta (más robusto)
+                code_blocks = [part.text for part in response.parts if isinstance(part, genai.types.Part.from_dict({"text": ""}).__class__)]
+                if code_blocks:
+                    code = code_blocks[0].strip("```python\n").strip("```").strip()
+                    st.session_state.history.append(f"🤖 Código generado por la IA:") # Para depuración
+                    st.code(code) # Mostrar el código generado (temporalmente para depuración)
 
                 exec_globals = {"df": df, "pd": pd, "plt": plt, "sns": sns, "st": st}
                 buffer = io.StringIO()
@@ -139,26 +150,13 @@ Pregunta:
 
                 st.session_state.history.append(f"🤖 Ejecución del código:") # Para depuración
                 if output:
-                    st.session_state.history.append(f"Salida:\n{output}") # Para depuración
+                    st.session_state.history.append(f"Salida (print): {output}") # Para depuración
                 if error:
-                    st.session_state.history.append(f"Error:\n{error}") # Para depuración
+                    st.session_state.history.append(f"Error al ejecutar el código: {error}") # Para depuración
 
-                st.session_state.history.append("💬 Respuesta:")
                 if plot_generated:
                     st.pyplot(exec_globals['plt'])
-                elif output and not error:
-                    st.write(output)
-                elif error:
-                    st.error(f"Hubo un problema al generar la respuesta: {error}")
-                else:
-                    # Construir una respuesta amigable basada en la pregunta
-                    if "cuántos proveedores de urea" in pregunta.lower():
-                        urea_df = df[df['Producto'].str.contains('urea', case=False, na=False)]
-                        num_proveedores = urea_df['Proveedor'].nunique()
-                        st.write(f"Encontré **{num_proveedores}** proveedores diferentes de urea en tus datos.")
-                    else:
-                        st.write("La operación se realizó con éxito, pero no se generó una salida de texto directa.")
-
+                # No necesitamos mostrar output aquí, se espera que st.write en el código generado lo haga
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error general al procesar: {str(e)}")
