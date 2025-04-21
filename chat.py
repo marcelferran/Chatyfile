@@ -156,7 +156,7 @@ Pregunta:
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
-                st.session_state.history.append(f"📄 Código generado:\n```python\n{code}\n```")
+                #st.session_state.history.append(f"📄 Código generado:\n```python\n{code}\n```")    # ACTIVAR para ver el CODIGO generado
 
                 exec_globals = {
                     "df": df,
