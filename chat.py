@@ -171,11 +171,11 @@ Pregunta:
                 buffer = io.StringIO()
                 error_during_exec = None
 
-                with contextlib.redirect_stdout(buffer):
-                    try:
+                try:
+                    with contextlib.redirect_stdout(buffer):
                         exec(code, exec_globals)
-                    except Exception as e:
-                        error_during_exec = str(e)
+                except Exception as e:
+                    error_during_exec = str(e)
 
                 output = buffer.getvalue().strip()
 
@@ -190,7 +190,6 @@ Pregunta:
 
                 # Si hay texto en el buffer (como por print), lo mostramos
                 if output:
-                    # Si parece una tabla, tratar de evaluarla como tal
                     try:
                         possible_df = eval(output, exec_globals)
                         if isinstance(possible_df, pd.DataFrame):
