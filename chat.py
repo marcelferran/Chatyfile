@@ -171,11 +171,11 @@ Pregunta:
                 buffer = io.StringIO()
                 error_during_exec = None
 
-                try:
-                    with contextlib.redirect_stdout(buffer):
+                with contextlib.redirect_stdout(buffer):
+                    try:
                         exec(code, exec_globals)
-                except Exception as e:
-                    error_during_exec = str(e)
+                    except Exception as e:
+                        error_during_exec = str(e)
 
                 output = buffer.getvalue().strip()
 
