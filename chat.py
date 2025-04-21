@@ -155,8 +155,11 @@ Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python\n").strip("```").strip()
-                #st.session_state.history.append(f"📄 Código generado:\n```python\n{code}\n```")    # ACTIVAR para ver el CODIGO generado
+                # code = response.text.strip("```python\n").strip("```").strip()      # ==> Activar para ver el codigo utilizado para generar la respuesta
+
+                # Correcciones automáticas de errores comunes
+                code = code.replace("rint(", "print(")
+                code = code.replace("figsize=(8, 6)", "figsize=(4.8, 3.6)")
 
                 exec_globals = {
                     "df": df,
@@ -182,12 +185,23 @@ Pregunta:
                     st.pyplot(plt.gcf())
                     plt.clf()
 
-                # Si hay texto en el buffer (como por print), lo mostramos
+                # Si hay texto en el buffer (como por print), mostrar como código
                 if output:
-                    st.code(output)
+                    # Intentar parsear el output como tabla si parece estructurado
+                    try:
+                        lines = output.split("\n")
+                        if len(lines) > 1 and all("," in l or "\t" in l for l in lines):
+                            # Convertir a DataFrame si es una tabla delimitada
+                            delimiter = "," if "," in lines[0] else "\t"
+                            df_output = pd.read_csv(io.StringIO(output), sep=delimiter)
+                            st.dataframe(df_output)
+                        else:
+                            st.code(output)
+                    except:
+                        st.code(output)
 
-                # También intentamos capturar cualquier variable simple como resultado numérico
                 else:
+                    # Intentar mostrar una variable resultante
                     for key, val in exec_globals.items():
                         if key.startswith("num_") and isinstance(val, (int, float, str)):
                             st.metric(label=key, value=val)
@@ -199,10 +213,3 @@ Pregunta:
                                 break
                         else:
                             st.success("✅ Código ejecutado sin salida visible.")
-
-            except Exception as e:
-                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
-                st.rerun()
-
-else:
-    st.warning("Por favor, sube un archivo para continuar.")
