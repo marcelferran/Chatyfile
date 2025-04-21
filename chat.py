@@ -180,23 +180,19 @@ Pregunta:
                         st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
                         st.rerun()
 
-                output = buffer.getvalue()
+                output = buffer.getvalue().strip()
 
                 # Mostrar resultados de forma amigable
                 if "plt" in code or "sns" in code:
                     # Mostrar gráfica si el código genera una
                     st.pyplot(plt.gcf())
                     plt.clf()  # Limpiar la figura para la próxima gráfica
-                elif output.strip():
-                    # Mostrar salida de texto como DataFrame si es posible
+                elif output:
+                    # Mostrar salida de texto como tabla si es un valor simple
                     try:
-                        result = eval(output.strip(), exec_globals)
-                        if isinstance(result, pd.DataFrame):
-                            st.dataframe(result)
-                        elif isinstance(result, (int, float, str)):
-                            st.table(pd.DataFrame({"Resultado": [result]}))
-                        else:
-                            st.write(output)
+                        # Intentar convertir la salida a un número o string
+                        value = float(output) if output.replace(".", "").isdigit() else output
+                        st.table(pd.DataFrame({"Resultado": [value]}))
                     except:
                         st.write(output)
                 else:
