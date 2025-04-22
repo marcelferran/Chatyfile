@@ -54,7 +54,7 @@ st.markdown("""
         background-color: #ffffff;
         border-right: 2px solid #1f77b4;
     }
-    .st10Button>button {
+    .stButton>button {
         background-color: #ff7f0e;
         color: white;
         border-radius: 5px;
@@ -142,7 +142,7 @@ if uploaded_file is not None:
 
     if submitted and pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.history.append("👋 Programa finalizado.")
+            st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
             st.rerun()
         else:
@@ -168,7 +168,6 @@ Pregunta:
                         exec(code, exec_globals)
                     except Exception as e:
                         st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
-                        st.rerun()
 
                 output = buffer.getvalue()
 
@@ -181,6 +180,6 @@ Pregunta:
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-            st.rerun()
+        st.rerun()
 else:
     st.warning("Por favor, sube un archivo para continuar.")
