@@ -7,15 +7,15 @@ def show_header():
         <style>
         .header {
             display: flex;
-            align-items: center;
-            justify-content: flex-end; /* Alinea los elementos al final (derecha) */
+            justify-content: space-between; /* Distribuye el espacio entre los elementos */
+            align-items: center; /* Alinea verticalmente los elementos */
+            padding: 10px; /* Opcional: añade un poco de espacio alrededor del encabezado */
+        }
+        .header h1 {
+            margin: 0; /* Elimina el margen predeterminado del título */
         }
         .header img {
             width: 400px;
-            margin-left: 20px; /* Espacio entre el título y el logo */
-        }
-        .header h1 {
-            margin-right: auto; /* Empuja el título a la izquierda */
         }
         </style>
         """,
