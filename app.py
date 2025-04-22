@@ -58,10 +58,6 @@ if uploaded_file is not None:
         else:
             procesar_pregunta(pregunta, df)
             st.rerun()
-
-    # Mostrar el botón para borrar el historial
-    st.write("")  # Espacio para mejor presentación
-    borrar_historial()  # Esto crea el botón "Borrar chat"
-
+            
 else:
     st.warning("Por favor, sube un archivo para continuar.")
