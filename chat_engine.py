@@ -1,11 +1,10 @@
 import io
 import contextlib
-import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import google.generativeai as genai
-
+import numpy as np
 
 # Función para iniciar el chat
 def iniciar_chat(df):
@@ -56,17 +55,16 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final como un DataFrame. NO uses print(), return, .tolist(), .values, ni muestres la salida directamente; escribe solo la expresión o las operaciones que generan un DataFrame.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, ni muestres la salida directamente.
 
 Instrucciones:
-- Siempre devuelve un DataFrame, incluso para listas, conteos, o intersecciones. Usa pd.DataFrame, .reset_index(), o métodos equivalentes para asegurar que el resultado sea un DataFrame.
-- Para preguntas que piden mostrar una tabla o DataFrame (por ejemplo, 'muestra las primeras 5 filas'), usa operaciones como df.head(5).
+- Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
 - Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y envuelve el resultado en un DataFrame.
 - Para preguntas que piden sumas o totales (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame.
-- Para preguntas sobre productos como 'urea', usa búsquedas flexibles con .str.contains('urea', case=False, na=False) y considera variaciones (por ejemplo, 'Urea 46%', 'urea granulada').
-- Para preguntas que piden listas con valores asociados (por ejemplo, 'lista de proveedores y monto comprado'), usa .groupby() y .sum() para crear un DataFrame con las columnas adecuadas.
-- Para preguntas que piden intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), filtra por cada categoría, encuentra la intersección de proveedores usando .isin(), y devuelve un DataFrame con los resultados.
-- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y escribe None como la última línea.
+- Para preguntas sobre productos como 'urea', usa .str.contains('urea', case=False, na=False) para búsquedas flexibles.
+- Para preguntas que piden listas con valores asociados (por ejemplo, 'lista de proveedores y monto comprado'), usa .groupby() y .sum() para crear un DataFrame.
+- Para preguntas que piden intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
+- Para gráficos, usa matplotlib (plt.figure(), plt.pie(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. NO uses pandas.plot.
 - Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
@@ -76,10 +74,14 @@ Ejemplos:
   Código: pd.DataFrame({{'Resultado': [df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()]}})
 - Pregunta: "Total de Cantidad para 'urea' en 2025"
   Código: pd.DataFrame({{'Resultado': [df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()]}})
-- Pregunta: "Cuántos proveedores venden urea, lista y monto comprado"
-  Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
 - Pregunta: "Proveedores en Refacciones y Mano de Obra"
   Código: pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()}}).merge(pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique()}}), on='Proveedor')
+- Pregunta: "Gráfico de pastel del top 5 de proveedores por ventas totales"
+  Código: 
+    top_5 = df.groupby('Proveedor')['Cantidad'].sum().nlargest(5)
+    plt.figure()
+    plt.pie(top_5, labels=top_5.index, autopct='%1.1f%%')
+    None
 
 Pregunta:
 {pregunta}
