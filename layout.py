@@ -6,9 +6,6 @@ def show_header():
     col1, col2 = st.columns([1, 2])
     with col1:
         st.image("logo.jpeg", width=200)  # Reduje el tamaño del logo para mejor balance
-    with col2:
-        st.markdown("<h1 style='color: #ffffff; margin-top: 20px;'>📄 Chatyfile</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #ffffff; font-size: 16px;'>Tu asistente para analizar datos</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
