@@ -2,34 +2,14 @@ import streamlit as st
 
 # Función para mostrar el encabezado
 def show_header():
-    # Estilos personalizados
-    st.markdown("""
-        <style>
-            .custom-header {
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                gap: 30px;
-                margin-bottom: 30px;
-            }
-            .custom-header img {
-                max-height: 160px;
-                width: auto;
-            }
-            .custom-header-text h1 {
-                color: #1f77b4; /* azul tipo Streamlit */
-                font-size: 40px;
-                margin: 0;
-                padding: 0;
-            }
-            .custom-header-text p {
-                color: #1f77b4;
-                font-size: 18px;
-                margin: 5px 0 0;
-                padding: 0;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        st.image("logo.jpeg", width=600)  # Asegúrate que la imagen exista y tenga buena resolución
+
+    with col2:
+        st.markdown("<h1 style='color: #1f77b4; margin-top: 30px;'>📄 Chatyfile</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #1f77b4; font-size: 20px;'>Tu asistente para analizar datos</p>", unsafe_allow_html=True)
 
     # Contenido del encabezado
     st.markdown(f"""
