@@ -3,16 +3,14 @@ import streamlit as st
 # Función para mostrar el encabezado
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.image("logo.jpeg", width=500)
-        
+    st.image("logo.jpeg", width=400)
+    #st.title("📄 Chatyfile")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
 def show_footer():
     st.markdown("""
-        <div class="footer">
+        <div class="footer" style="text-align: left; margin-top: 50px;">
             <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
         </div>
     """, unsafe_allow_html=True)
@@ -21,51 +19,17 @@ def show_footer():
 def apply_custom_styles():
     st.markdown("""
         <style>
-        .stApp { 
-            background-color: #f0f2f6; 
-        }
+        .stApp { background-color: #f0f2f6; }
         .header {
-            display: flex; 
-            align-items: center; 
-            padding: 20px;
-            background-color: #1f77b4; 
-            border-radius: 10px;
-            margin-bottom: 20px;  /* Añadido margen inferior */
+            display: flex; align-items: center; padding: 10px;
+            background-color: #1f77b4; border-radius: 10px;
         }
-        .header img { 
-            margin-right16px; 
-        }
-        h1 { 
-            color: #ffffff; 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; 
-        }
+        .header img { width: 400px; margin-right: 20px; }
+        h1 { color: #ffffff; font-family: 'Arial', sans-serif; margin: 0; }
         .footer {
-            text-align: center;  /* Centrado */
-            padding: 15px; 
-            background-color: #1f77b4;
-            color: white; 
+            text-align: center; padding: 10px; background-color: #1f77b4;
+            color: white; position: fixed; bottom: 0; width: 100%;
             border-top: 2px solid #ffffff;
-            margin-top: 30px;  /* Margen superior */
-            border-radius: 10px;
-        }
-        .main-container {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .summary-box {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 20px;
-        }
-        .plot-container {
-            max-width: 800px !important;
-            margin: auto;
         }
         </style>
     """, unsafe_allow_html=True)
