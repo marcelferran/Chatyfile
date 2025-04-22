@@ -7,6 +7,7 @@ import google.generativeai as genai
 import plotly.express as px
 import plotly.graph_objects as go
 
+
 # Función para iniciar el chat
 def iniciar_chat(df):
     model = genai.GenerativeModel('gemini-2.0-flash')
@@ -30,6 +31,7 @@ def iniciar_chat(df):
 def mostrar_historial():
     for msg in st.session_state.history:
         st.write(msg)
+        
 
 # Función para procesar la pregunta y generar la respuesta
 def procesar_pregunta(pregunta, df):
@@ -82,6 +84,17 @@ Pregunta:
     except Exception as e:
         # Si algo falla en el proceso de la conversación, mostramos el error
         st.session_state.history.append(f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}")
+        
+
+# Mostrar respuestas guardadas en el historial
+def mostrar_historial():
+    if "history" in st.session_state:
+        for entry in st.session_state.history:
+            if isinstance(entry, pd.DataFrame):
+                st.dataframe(entry)
+            else:
+                st.write(entry)
+                
 
 # Función para borrar el historial del chat
 def borrar_historial():
