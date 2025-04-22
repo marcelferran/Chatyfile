@@ -2,9 +2,7 @@ import io
 import contextlib
 import pandas as pd
 import streamlit as st
-import plotly.express as px
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 import google.generativeai as genai
 
 # Función para iniciar el chat
@@ -21,18 +19,36 @@ def iniciar_chat(df):
         }
     ])
     st.session_state.chat = chat
-    st.session_state.history = [
-        "🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.",
-        "✏️ Escribe 'salir' para finalizar."
-    ]
+    # Inicializar el historial si no existe
+    if 'history' not in st.session_state:
+        st.session_state.history = [
+            {"role": "system", "content": "🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame."},
+            {"role": "system", "content": "✏️ Escribe 'salir' para finalizar."}
+        ]
 
 # Función para mostrar el historial de conversación
 def mostrar_historial():
     for msg in st.session_state.history:
-        st.write(msg)
+        if msg["role"] == "user":
+            st.markdown(f"**Usuario**: {msg['content']}")
+        elif msg["role"] == "assistant":
+            st.markdown(f"**Asistente**: {msg['content']}")
+            if "figure" in msg:
+                st.pyplot(msg["figure"])
+            elif "result_df" in msg:
+                st.dataframe(msg["result_df"])
+        else:
+            st.markdown(f"{msg['content']}")
 
 # Función para procesar la pregunta y generar la respuesta
 def procesar_pregunta(pregunta, df):
+    if pregunta.lower() == "salir":
+        st.session_state.history.append({"role": "system", "content": "🛑 Chat finalizado."})
+        return
+
+    # Guardar la pregunta en el historial
+    st.session_state.history.append({"role": "user", "content": pregunta})
+
     prompt = f"""
 Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
@@ -42,45 +58,67 @@ Responde a esta pregunta escribiendo solamente el código Python que da la respu
 
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
-Si la pregunta requiere una gráfica, genera la gráfica usando matplotlib y muéstrala con st.pyplot().
+Si la pregunta requiere una gráfica, genera la gráfica usando matplotlib y muéstrala con plt.figure().
 
 Pregunta:
 {pregunta}
 """
     try:
-        # Aquí estamos capturando el texto de la respuesta del modelo
         response = st.session_state.chat.send_message(prompt)
         code = response.text.strip("```python").strip("```").strip()
-        
+
         if not code:
-            st.session_state.history.append("❌ **No se generó código**. Intenta preguntar de otra forma.")
+            st.session_state.history.append({"role": "assistant", "content": "❌ **No se generó código**. Intenta preguntar de otra forma."})
+            return
 
         buffer = io.StringIO()
-        exec_globals = {"df": df, "plt": plt}  # Asegúrate de incluir plt en exec_globals
-        
+        exec_globals = {"df": df, "plt": plt, "pd": pd}
+        fig = None
+
         with contextlib.redirect_stdout(buffer):
             try:
+                # Ejecutarthinker
                 exec(code, exec_globals)
+                # Verificar si se creó una figura
+                if plt.get_fignums():
+                    fig = plt.gcf()
+                plt.close('all')  # Cerrar la figura para evitar acumulación
             except Exception as e:
-                st.session_state.history.append(f"❌ **Error al ejecutar el código**: {str(e)}")
-                return  # Salir de la función si hay error al ejecutar el código
-        
+                st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
+                return
+
         output = buffer.getvalue()
 
-        if output.strip():
-            if "plt.show()" in code:
-                st.session_state.history.append("📊 **Gráfica generada:**")
-                st.pyplot()  # Asegúrate de mostrar la gráfica con st.pyplot()
-            else:
-                result_df = pd.DataFrame([output.split("\n")]).T
-                result_df.columns = ["Resultados"]
-                st.session_state.history.append("💬 **Respuesta:**")
-                st.session_state.history.append(result_df)
+        # Guardar la respuesta en el historial
+        response_dict = {"role": "assistant", "content": f"💻 **Código ejecutado**:\n```python\n{code}\n```"}
+        
+        if fig:
+            response_dict["figure"] = fig
+            response_dict["content"] += "\n📊 **Gráfica generada**:"
+        elif output.strip():
+            try:
+                # Intentar evaluar si el output es un DataFrame
+                result = eval(code, {"df": df, "pd": pd})
+                if isinstance(result, pd.DataFrame):
+                    response_dict["result_df"] = result
+                    response_dict["content"] += "\n📋 **Resultados**:"
+                else:
+                    response_dict["content"] += f"\n📋 **Resultados**:\n{output}"
+            except:
+                response_dict["content"] += f"\n📋 **Resultados**:\n{output}"
+        else:
+            response_dict["content"] += "\n📋 **Resultados**: (Sin salida de texto)"
+
+        st.session_state.history.append(response_dict)
 
     except Exception as e:
-        # Si algo falla en el proceso de la conversación, mostramos el error
-        st.session_state.history.append(f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}")
+        st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
+
 # Función para borrar el historial del chat
 def borrar_historial():
     if st.button('Borrar chat'):
-        st.session_state.history = ["Chat borrado. Comienza una nueva conversación."]
+        st.session_state.history = [
+            {"role": "system", "content": "🟢 Chat borrado. Comienza una nueva conversación."},
+            {"role": "system", "content": "✏️ Escribe 'salir' para finalizar."}
+        ]
+        st.experimental_rerun()  # Refrescar la página para reflejar el historial limpio
