@@ -51,7 +51,7 @@ Pregunta:
         # Aquí estamos capturando el texto de la respuesta del modelo
         response = st.session_state.chat.send_message(prompt)
         code = response.text.strip("```python").strip("```").strip()
-        
+
         if not code:
             st.session_state.history.append("❌ **No se generó código**. Intenta preguntar de otra forma.")
 
@@ -70,7 +70,9 @@ Pregunta:
         if output.strip():
             if "plt.show()" in code:
                 st.session_state.history.append("📊 **Gráfica generada:**")
-                st.pyplot()  # Asegúrate de mostrar la gráfica con st.pyplot()
+                # Guardar la figura generada en la sesión
+                st.session_state.graph = plt.gcf()  # Usar plt.gcf() para obtener la figura actual
+                st.pyplot(st.session_state.graph)
             else:
                 result_df = pd.DataFrame([output.split("\n")]).T
                 result_df.columns = ["Resultados"]
