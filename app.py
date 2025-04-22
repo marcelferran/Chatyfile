@@ -1,11 +1,11 @@
 import pandas as pd
 import streamlit as st
-import plotly.express as px
+from config import configure_genai
 from utils import mostrar_resumen_df
-from config import get_api_key, configure_genai, get_graph_settings
-from chat_engine import iniciar_chat, mostrar_historial, procesar_pregunta
+from chat_engine import iniciar_chat, mostrar_historial, procesar_pregunta, borrar_historial
 from layout import apply_custom_styles, show_header, show_footer, show_welcome_message, sidebar_file_uploader
 
+# Configuración de la página
 st.set_page_config(
     page_title="Chatyfile",
     page_icon="📄",
@@ -13,6 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Aplicar estilos y mostrar elementos de diseño
 apply_custom_styles()
 show_header()
 show_welcome_message()
@@ -58,8 +59,9 @@ if uploaded_file is not None:
             procesar_pregunta(pregunta, df)
             st.rerun()
 
-    # Botón para borrar el historial
-    borrar_historial()
+    # Mostrar el botón para borrar el historial
+    st.write("")  # Espacio para mejor presentación
+    borrar_historial()  # Esto crea el botón "Borrar chat"
 
 else:
     st.warning("Por favor, sube un archivo para continuar.")
