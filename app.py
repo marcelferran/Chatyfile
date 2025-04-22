@@ -3,13 +3,13 @@ import streamlit as st
 from config import configure_genai
 from utils import mostrar_resumen_df
 from chat_engine import iniciar_chat, mostrar_historial, procesar_pregunta
-from layout import apply_custom_styles, show_header, show_footer, show_welcome_message, sidebar_file_uploader
+from layout import apply_custom_styles, show_header, show_welcome_message, sidebar_file_uploader
 
 # Configuración de la página
 st.set_page_config(
     page_title="Chatyfile",
     page_icon="📄",
-    layout="wide",
+    layout="centered",  # Cambiado de "wide" a "centered"
     initial_sidebar_state="expanded"
 )
 
