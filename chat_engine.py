@@ -97,21 +97,42 @@ Pregunta:
         if fig:
             response_dict["figure"] = fig
             response_dict["content"] += "📊 **Gráfica generada:**"
-        elif output.strip():
+        else:
             try:
                 result = eval(code, {"df": df, "pd": pd})
+                # Convertir el resultado en DataFrame si no lo es
                 if isinstance(result, pd.DataFrame):
-                    response_dict["result_df"] = result
-                    response_dict["content"] += "\n📋 **Resultados:**"
+                    result_df = result
+                elif isinstance(result, (list, tuple)):
+                    result_df = pd.DataFrame(result, columns=["Resultado"])
+                elif isinstance(result, (int, float, str)):
+                    result_df = pd.DataFrame({"Resultado": [result]})
                 else:
-                    response_dict["content"] += f"\n📋 **Resultados:**\n{output}"
-            except:
-                response_dict["content"] += f"\n📋 **Resultados:**\n{output}"
-        else:
-            response_dict["content"] += "\n📋 **Resultados:** (Sin salida de texto)"
+                    result_df = pd.DataFrame({"Resultado": [str(result)]})
 
-        # ✅ Aquí va correctamente
+                # Redondear números a 2 decimales para columnas numéricas
+                for col in result_df.select_dtypes(include=['float64', 'float32']).columns:
+                    result_df[col] = result_df[col].round(2)
+
+                response_dict["result_df"] = result_df
+                response_dict["content"] += "\n📋 **Resultados:**"
+            except:
+                # Si no se puede evaluar, usar la salida de texto como DataFrame
+                result_df = pd.DataFrame({"Resultado": [output.strip()]})
+                response_dict["result_df"] = result_df
+                response_dict["content"] += "\n📋 **Resultados:**"
+
+        # Guardar la respuesta en el historial
         st.session_state.history.append(response_dict)
 
     except Exception as e:
         st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
+
+# Función para borrar el historial del chat
+def borrar_historial():
+    if st.button('Borrar chat'):
+        st.session_state.history = [
+            {"role": "system", "content": "🟢 Chat borrado. Comienza una nueva conversación."},
+            {"role": "system", "content": "✏️ Escribe 'salir' para finalizar."}
+        ]
+        st.experimental_rerun()  # Refrescar la página para reflejar el historial limpio
