@@ -56,12 +56,12 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, ni muestres texto explicativo; solo escribe el código Python válido.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, import statements (como import pandas as pd), ni muestres texto explicativo; solo escribe el código Python válido usando pd, plt, np, que ya están disponibles.
 
 Instrucciones:
 - Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
 - Para conteos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y envuelve el resultado en un DataFrame.
-- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame.
+- For sums (e.g., 'total comprado'), use .sum() and return a DataFrame.
 - Para búsquedas de productos como 'urea', usa .str.contains('urea', case=False, na=False).
 - Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
 - Para intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
@@ -100,6 +100,10 @@ Pregunta:
         if not code:
             st.session_state.history.append({"role": "assistant", "content": "❌ **No se generó código**. Intenta preguntar de otra forma."})
             return
+
+        # Filtrar líneas que comiencen con 'import'
+        code_lines = [line for line in code.split('\n') if not line.strip().startswith('import')]
+        code = '\n'.join(code_lines).strip()
 
         # Validar que el código sea sintácticamente válido
         try:
