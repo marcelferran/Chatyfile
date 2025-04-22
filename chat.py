@@ -44,6 +44,14 @@ st.markdown("""
         color: white; position: fixed; bottom: 0; width: 100%;
         border-top: 2px solid #ffffff;
     }
+    .message-container {
+        max-height: 500px; overflow-y: auto; padding: 10px;
+        background-color: #ffffff; border-radius: 10px;
+    }
+    .input-container {
+        position: fixed; bottom: 0; width: 100%;
+        background-color: #f0f2f6; padding: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -86,7 +94,7 @@ if uploaded_file is not None:
     st.write(f"- Número de filas: {num_rows}")
     st.write(f"- Número de columnas: {num_cols}")
     st.write("**Nombres de las columnas:**")
-    st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]))
+    st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]), width=700)
 
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-2.0-flash')
@@ -103,11 +111,20 @@ if uploaded_file is not None:
         st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
         st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    with st.form(key='pregunta_form', clear_on_submit=True):
-        pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.form_submit_button(label="Enviar", disabled=False)
+    st.markdown('<div class="message-container">', unsafe_allow_html=True)
+    for item in st.session_state.history:
+        if isinstance(item, pd.DataFrame):
+            st.dataframe(item, width=800, height=300)
+        else:
+            st.write(item)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if submitted and pregunta:
+    with st.container():
+        st.markdown('<div class="input-container">', unsafe_allow_html=True)
+        pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if pregunta:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
@@ -154,13 +171,7 @@ Pregunta:
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-    # Mostrar el historial de respuestas sin borrarlas
-    for item in st.session_state.history:
-        if isinstance(item, pd.DataFrame):
-            st.dataframe(item)
-        else:
-            st.write(item)
+    st.rerun()
 
 else:
     st.warning("Por favor, sube un archivo para continuar.")
-
