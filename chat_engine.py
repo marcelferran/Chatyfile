@@ -65,7 +65,7 @@ Pregunta:
 """
     try:
         response = st.session_state.chat.send_message(prompt)
-        #code = response.text.strip("```python").strip("```").strip()
+        code = response.text.strip("```python").strip("```").strip()
 
         if not code:
             st.session_state.history.append({"role": "assistant", "content": "❌ **No se generó código**. Intenta preguntar de otra forma."})
