@@ -127,54 +127,23 @@ if uploaded_file is not None:
     with st.container():
         st.markdown('<div class="input-container">', unsafe_allow_html=True)
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+        submitted = st.button("Enviar")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    if pregunta:
+    if submitted and pregunta:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
         else:
             try:
-                prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(df.columns)}.
-NO CAMBIES los nombres de las columnas.
-
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-
-Para preguntas sobre productos, usa búsquedas flexibles que ignoren mayúsculas/minúsculas y consideren variaciones del texto.
-
-Si la pregunta requiere una gráfica, usa `matplotlib.pyplot` y muéstrala con `st.pyplot()`.
-
-Pregunta:
-{pregunta}
-"""
-                response = st.session_state.chat.send_message(prompt)
-                code = response.text.strip("```python\n").strip("```").strip()
-
-                exec_globals = {"df": df, "plt": plt}
-                buffer = io.StringIO()
-
-                with contextlib.redirect_stdout(buffer):
-                    try:
-                        exec(code, exec_globals)
-                    except Exception as e:
-                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
-
-                output = buffer.getvalue()
-
-                if output.strip():
-                    if "plt.show()" in code:
-                        st.session_state.history.append("📊 **Gráfica generada:**")
-                        st.pyplot()
-                    else:
-                        result_df = pd.DataFrame([output.split("\n")]).T
-                        result_df.columns = ["Resultados"]
-                        st.session_state.history.append("💬 **Respuesta:**")
-                        st.session_state.history.append(result_df)
+                response = st.session_state.chat.send_message(pregunta)
+                st.session_state.history.append(f"**🤖 Pregunta:** {pregunta}")
+                st.session_state.history.append(f"💬 **Respuesta:** {response.text}")
 
             except Exception as e:
-                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
+                st.session_state.history.append(f"❌ Error: {str(e)}")
+
+    st.rerun()
 
 else:
     st.warning("Por favor, sube un archivo para continuar.")
