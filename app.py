@@ -1,57 +1,54 @@
 import streamlit as st
-from config import load_config
-from layout import render_header, render_sidebar, render_footer, render_data_summary
-from utils import load_file, execute_code
-from chat_engine import GeminiChat
+import pandas as pd
+from config import get_api_key, configure_genai
+from layout import apply_custom_styles, show_header, show_footer, show_welcome_message, sidebar_file_uploader
+from chat_engine import iniciar_chat, mostrar_historial, procesar_pregunta
+from utils import mostrar_resumen_df
 
-# === CONFIGURACIÓN INICIAL ===
-load_config()
-render_header()
+st.set_page_config(
+    page_title="Chatyfile",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# === CARGAR ARCHIVO DESDE SIDEBAR ===
-uploaded_file = render_sidebar()
+apply_custom_styles()
+show_header()
+show_welcome_message()
+uploaded_file = sidebar_file_uploader()
+show_footer()
 
-# === VALIDAR API KEY ===
-if "GEMINI_API_KEY" not in st.session_state:
-    api_key = st.text_input("🔑 Introduce tu GEMINI_API_KEY", type="password")
-    if api_key:
-        st.session_state["GEMINI_API_KEY"] = api_key
-    else:
-        st.warning("Por favor, introduce tu clave API para continuar.")
-        st.stop()
-else:
-    api_key = st.session_state["GEMINI_API_KEY"]
+api_key = get_api_key()
+if not api_key:
+    st.warning("Por favor, introduce tu clave API para continuar.")
+    st.stop()
 
-# === PROCESAR ARCHIVO SUBIDO ===
-if uploaded_file:
-    df = load_file(uploaded_file)
-    render_data_summary(df)
+configure_genai(api_key)
 
-    # Crear instancia del chat si no existe
-    if "chat" not in st.session_state or st.session_state.chat is None:
-        st.session_state.chat = GeminiChat(api_key, df.columns)
+if "chat" not in st.session_state:
+    st.session_state.chat = None
+    st.session_state.history = []
 
-    # Mostrar historial
-    for msg in st.session_state.chat.history:
-        st.write(msg)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    mostrar_resumen_df(df)
 
-    # Formulario de preguntas
-    with st.form("pregunta_form", clear_on_submit=True):
-        pregunta = st.text_input("🤖 Pregunta:", key="input_pregunta")
-        enviar = st.form_submit_button("Enviar")
+    if st.session_state.chat is None:
+        iniciar_chat(df)
 
-    if enviar and pregunta:
+    mostrar_historial()
+
+    with st.form(key='pregunta_form', clear_on_submit=True):
+        pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
+        submitted = st.form_submit_button(label="Enviar", disabled=False)
+
+    if submitted and pregunta:
         if pregunta.lower() == "salir":
-            st.session_state.chat.reset_chat()
+            st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
             st.rerun()
         else:
-            code = st.session_state.chat.send_question(pregunta, df.columns)
-            output, fig = execute_code(code, df)
-            if output:
-                st.code(output)
-            if fig:
-                st.pyplot(fig)
-
-# === PIE DE PÁGINA ===
-render_footer()
+            procesar_pregunta(pregunta, df)
+            st.rerun()
+else:
+    st.warning("Por favor, sube un archivo para continuar.")
