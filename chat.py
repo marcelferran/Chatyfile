@@ -54,7 +54,7 @@ st.markdown("""
         background-color: #ffffff;
         border-right: 2px solid #1f77b4;
     }
-    .stButton>button {
+    .st10Button>button {
         background-color: #ff7f0e;
         color: white;
         border-radius: 5px;
@@ -145,9 +145,7 @@ if uploaded_file is not None:
             st.session_state.history.append("👋 Programa finalizado.")
             st.session_state.chat = None
             st.rerun()
-        цел
-
-System: else:
+        else:
             try:
                 prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
