@@ -108,62 +108,53 @@ if "chat" not in st.session_state:
 
 # ==== LÓGICA PRINCIPAL ====
 if uploaded_file is not None:
-    df_w5 = pd.read_csv(uploaded_file)
+    df = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
 
-    num_rows, num_cols = df_w5.shape
+    num_rows, num_cols = df.shape
     st.write("**Resumen del archivo:**")
     st.write(f"- Número de filas: {num_rows}")
     st.write(f"- Número de columnas: {num_cols}")
     st.write("**Nombres de las columnas:**")
-    st.table(pd.DataFrame(df_w5.columns, columns=["Columnas"]))
+    st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
 
-    # Inicializar chat si es la primera vez
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-2.0-flash')
         st.session_state.chat = model.start_chat(history=[
             {
                 "role": "user",
-                "parts": [
-                    "Tienes un DataFrame de pandas llamado df_w5. Estas son las columnas reales que contiene: " 
-                    + ", ".join(df_w5.columns) 
-                    + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."
-                ]
+                "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]
             },
             {
                 "role": "model",
                 "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
             }
         ])
-        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu df_w5.")
-        st.session_state.history.append("✏️  Escribe 'salir' para terminar.")
+        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
+        st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    # Mostrar historial de chat
     for message in st.session_state.history:
         st.write(message)
 
-    # Formulario de pregunta
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.form_submit_button(label="Enviar")
+        submitted = st.form_submit_button(label="Enviar", disabled=False)
 
     if submitted and pregunta:
-        # Comando de salir
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Programa finalizado.")
             st.session_state.chat = None
             st.rerun()
-        else:
+        цел
+
+System: else:
             try:
-                # Línea añadida: búsqueda flexible para productos como 'urea'
-                # Prompt exactamente igual al código CLI original, sin cambiar df a df_w5
                 prompt = f"""
-Tienes un DataFrame de pandas llamado `df_w5` cargado en memoria.
-Estas son las columnas reales: {', '.join(df_w5.columns)}.
+Tienes un DataFrame de pandas llamado `df` cargado en memoria.
+Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
 Pregunta:
 {pregunta}
@@ -171,8 +162,7 @@ Pregunta:
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
 
-                # Ejecutar el código generado
-                exec_globals = {"df_w5": df_w5}
+                exec_globals = {"df": df}
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
@@ -180,8 +170,10 @@ Pregunta:
                         exec(code, exec_globals)
                     except Exception as e:
                         st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
+                        st.rerun()
 
                 output = buffer.getvalue()
+
                 if output.strip():
                     st.session_state.history.append("💬 Respuesta:")
                     st.session_state.history.append(output)
