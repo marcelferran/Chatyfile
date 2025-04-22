@@ -2,26 +2,14 @@ import streamlit as st
 
 # Función para mostrar el encabezado
 def show_header():
+    st.markdown('<div class="header">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 2])
-
     with col1:
-        st.image("logo.jpeg", width=600)  # Asegúrate que la imagen exista y tenga buena resolución
-
+        st.image("logo.jpeg", width=500)
     with col2:
-        st.markdown("<h1 style='color: #1f77b4; margin-top: 30px;'>📄 Chatyfile</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #1f77b4; font-size: 20px;'>Tu asistente para analizar datos</p>", unsafe_allow_html=True)
-
-    # Contenido del encabezado
-    st.markdown(f"""
-        <div class="custom-header">
-            <img src="logo.jpeg" alt="Logo">
-            <div class="custom-header-text">
-                <h1>📄 Chatyfile</h1>
-                <p>Tu asistente para analizar datos</p>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    
+        st.markdown("<h1 style='color: #ffffff; margin-top: 20px;'>📄 Chatyfile</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #ffffff; font-size: 16px;'>Tu asistente para analizar datos</p>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
 def show_footer():
