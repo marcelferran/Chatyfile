@@ -36,7 +36,7 @@ def mostrar_historial():
         elif msg["role"] == "assistant":
             st.markdown(f"**Asistente**: {msg['content']}")
             if "figure" in msg:
-                st.pyplot(msg["figure"])
+                st.pyplot(msg["figure"], use_container_width=False)
             elif "result_df" in msg:
                 st.dataframe(msg["result_df"])
         else:
@@ -66,7 +66,7 @@ Instrucciones:
 - Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
 - Para intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
 - Para conteos de múltiples categorías (por ejemplo, 'proveedores de Refacciones y Mano de Obra'), crea un DataFrame con una columna para la categoría y otra para el total.
-- Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. Siempre usa figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan años, alinea los datos con reindex para manejar meses faltantes, rellenando con ceros.
+- Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. No modifiques el tamaño de la figura; usa siempre figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan años, alinea los datos con reindex para manejar meses faltantes, rellenando con ceros.
 - Usa la columna 'Categoría' para filtros de categorías como 'Refacciones' o 'Mano de Obra'.
 - Usa la columna 'Mes' para agrupaciones mensuales y 'Año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
