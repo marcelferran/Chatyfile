@@ -97,7 +97,7 @@ if uploaded_file is not None:
     st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]), width=700)
 
     if st.session_state.chat is None:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         st.session_state.chat = model.start_chat(history=[
             {
                 "role": "user",
