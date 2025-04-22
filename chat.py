@@ -103,9 +103,6 @@ if uploaded_file is not None:
         st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
         st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    for message in st.session_state.history:
-        st.write(message)
-
     with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
         submitted = st.form_submit_button(label="Enviar", disabled=False)
@@ -114,7 +111,6 @@ if uploaded_file is not None:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
-            st.rerun()
         else:
             try:
                 prompt = f"""
@@ -124,9 +120,9 @@ NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 
-Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, `.str.contains('urea', case=False, na=False)`) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+Para preguntas sobre productos, usa búsquedas flexibles que ignoren mayúsculas/minúsculas y consideren variaciones del texto.
 
-Si la pregunta requiere una gráfica, genera la gráfica usando `matplotlib` y muéstrala con `st.pyplot()`.
+Si la pregunta requiere una gráfica, usa `matplotlib.pyplot` y muéstrala con `st.pyplot()`.
 
 Pregunta:
 {pregunta}
@@ -158,7 +154,13 @@ Pregunta:
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-        st.rerun()
+    # Mostrar el historial de respuestas sin borrarlas
+    for item in st.session_state.history:
+        if isinstance(item, pd.DataFrame):
+            st.dataframe(item)
+        else:
+            st.write(item)
+
 else:
     st.warning("Por favor, sube un archivo para continuar.")
 
