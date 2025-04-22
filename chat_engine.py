@@ -65,7 +65,9 @@ Instrucciones:
 - Para búsquedas de productos como 'urea', usa .str.contains('urea', case=False, na=False).
 - Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
 - Para intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
-- Para gráficos, usa matplotlib (plt.figure(), plt.pie(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea.
+- Para conteos de múltiples categorías (por ejemplo, 'proveedores de Refacciones y Mano de Obra'), crea un DataFrame con una columna para la categoría y otra para el total.
+- Para gráficos, usa matplotlib (plt.figure(figsize=(4, 4)), plt.pie(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. Usa un tamaño de figura pequeño (4x4 pulgadas) para Streamlit.
+- Usa la columna 'Categoría' para filtros de categorías como 'Refacciones' o 'Mano de Obra'.
 - Usa las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
@@ -79,10 +81,12 @@ Ejemplos:
   Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
 - Pregunta: "Proveedores en Refacciones y Mano de Obra"
   Código: pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()}}).merge(pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique()}}), on='Proveedor')
+- Pregunta: "Indica cuantos proveedores son de Refacciones y también cuantos de Mano de Obra"
+  Código: pd.DataFrame({{'Categoría': ['Refacciones', 'Mano de Obra'], 'Total Proveedores': [df[df['Categoría'] == 'Refacciones']['Proveedor'].nunique(), df[df['Categoría'] == 'Mano de Obra']['Proveedor'].nunique()]}})
 - Pregunta: "Gráfico de pastel del top 5 de proveedores por ventas totales"
   Código:
     top_5 = df.groupby('Proveedor')['Cantidad'].sum().nlargest(5)
-    plt.figure()
+    plt.figure(figsize=(4, 4))
     plt.pie(top_5, labels=top_5.index, autopct='%1.1f%%')
     None
 
