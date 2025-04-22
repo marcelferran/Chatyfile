@@ -1,9 +1,37 @@
 import io
 import contextlib
 import pandas as pd
-import matplotlib.pyplot as plt  # Asegúrate de importar esto
 import streamlit as st
+import plotly.express as px
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import google.generativeai as genai
 
+# Función para iniciar el chat
+def iniciar_chat(df):
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    chat = model.start_chat(history=[
+        {
+            "role": "user",
+            "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]
+        },
+        {
+            "role": "model",
+            "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
+        }
+    ])
+    st.session_state.chat = chat
+    st.session_state.history = [
+        "🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.",
+        "✏️ Escribe 'salir' para finalizar."
+    ]
+
+# Función para mostrar el historial de conversación
+def mostrar_historial():
+    for msg in st.session_state.history:
+        st.write(msg)
+
+# Función para procesar la pregunta y generar la respuesta
 def procesar_pregunta(pregunta, df):
     prompt = f"""
 Tienes un DataFrame de pandas llamado df cargado en memoria.
@@ -52,3 +80,7 @@ Pregunta:
     except Exception as e:
         # Si algo falla en el proceso de la conversación, mostramos el error
         st.session_state.history.append(f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}")
+# Función para borrar el historial del chat
+def borrar_historial():
+    if st.button('Borrar chat'):
+        st.session_state.history = ["Chat borrado. Comienza una nueva conversación."]
