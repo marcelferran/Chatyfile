@@ -77,24 +77,23 @@ Pregunta:
 
         with contextlib.redirect_stdout(buffer):
             try:
-                # Ejecutarthinker
+                # Ejecutar el código
                 exec(code, exec_globals)
-                # Verificar si se creó una figura
                 if plt.get_fignums():
                     fig = plt.gcf()
-                plt.close('all')  # Cerrar la figura para evitar acumulación
+                plt.close('all')
             except Exception as e:
                 st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
                 return
 
         output = buffer.getvalue()
 
-        # Guardar la respuesta en el historial
-        DEBUG_MODE = False  # Cambia a True si quieres ver el código generado
+        # Armar la respuesta sin mostrar el código
+        DEBUG_MODE = False
         response_dict = {"role": "assistant", "content": ""}
         if DEBUG_MODE:
             response_dict["content"] += f"💻 **Código ejecutado**:\n```python\n{code}\n```"
-        
+
         if fig:
             response_dict["figure"] = fig
             response_dict["content"] += "📊 **Gráfica generada:**"
@@ -110,8 +109,9 @@ Pregunta:
                 response_dict["content"] += f"\n📋 **Resultados:**\n{output}"
         else:
             response_dict["content"] += "\n📋 **Resultados:** (Sin salida de texto)"
-        
-                st.session_state.history.append(response_dict)
+
+        # ✅ Aquí va correctamente
+        st.session_state.history.append(response_dict)
 
     except Exception as e:
         st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
