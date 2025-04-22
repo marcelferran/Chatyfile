@@ -11,7 +11,7 @@ def show_header():
         st.markdown("### 📄 Chatyfile")
 
     with col2:
-        st.image("logo.jpeg", width=800)
+        st.image("logo.jpeg", width=1200)
 
     st.markdown("---")
 
