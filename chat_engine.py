@@ -2,6 +2,7 @@ import io
 import contextlib
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 import google.generativeai as genai
 import plotly.express as px
 import plotly.graph_objects as go
@@ -55,7 +56,7 @@ Pregunta:
             st.session_state.history.append("❌ **No se generó código**. Intenta preguntar de otra forma.")
 
         buffer = io.StringIO()
-        exec_globals = {"df": df, "plt": plt}
+        exec_globals = {"df": df, "plt": plt}  # Asegúrate de incluir plt en exec_globals
         
         with contextlib.redirect_stdout(buffer):
             try:
@@ -69,7 +70,7 @@ Pregunta:
         if output.strip():
             if "plt.show()" in code:
                 st.session_state.history.append("📊 **Gráfica generada:**")
-                st.pyplot()
+                st.pyplot()  # Asegúrate de mostrar la gráfica con st.pyplot()
             else:
                 result_df = pd.DataFrame([output.split("\n")]).T
                 result_df.columns = ["Resultados"]
