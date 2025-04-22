@@ -150,8 +150,10 @@ Pregunta:
                         st.session_state.history.append("📊 **Gráfica generada:**")
                         st.pyplot()
                     else:
+                        result_df = pd.DataFrame([output.split("\n")]).T
+                        result_df.columns = ["Resultados"]
                         st.session_state.history.append("💬 **Respuesta:**")
-                        st.dataframe(pd.DataFrame(output.split("\n"), columns=["Resultados"]))
+                        st.session_state.history.append(result_df)
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
