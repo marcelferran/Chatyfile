@@ -3,6 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 import io
 import contextlib
+import matplotlib.pyplot as plt
 
 # ==== CONFIGURAR LA API DE GEMINI ====
 if "GEMINI_API_KEY" in st.secrets:
@@ -38,8 +39,6 @@ st.markdown("""
     }
     .header img { width: 400px; margin-right: 20px; }
     h1 { color: #ffffff; font-family: 'Arial', sans-serif; margin: 0; }
-    .css-1d391kg { background-color: #ffffff; border-right: 2px solid #1f77b4; }
-    .stButton>button { background-color: #ff7f0e; color: white; border-radius: 5px; }
     .footer {
         text-align: center; padding: 10px; background-color: #1f77b4;
         color: white; position: fixed; bottom: 0; width: 100%;
@@ -64,11 +63,6 @@ st.markdown("""
 with st.sidebar:
     st.header("🤖 Opciones")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
-    st.markdown("---")
-    st.subheader("⚠️ Instrucciones")
-    st.write("1. Sube el archivo con tus datos.")
-    st.write("2. Escribe tu pregunta y presiona 'Enter' o haz clic en 'Enviar'.")
-    st.write("3. Escribe 'salir' para finalizar.")
 
 # ==== PIE DE PÁGINA ====
 st.markdown("""
@@ -92,7 +86,7 @@ if uploaded_file is not None:
     st.write(f"- Número de filas: {num_rows}")
     st.write(f"- Número de columnas: {num_cols}")
     st.write("**Nombres de las columnas:**")
-    st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
+    st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]))
 
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-2.0-flash')
@@ -132,13 +126,15 @@ Responde a esta pregunta escribiendo solamente el código Python que da la respu
 
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, `.str.contains('urea', case=False, na=False)`) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
+Si la pregunta requiere una gráfica, genera la gráfica usando `matplotlib` y muéstrala con `st.pyplot()`.
+
 Pregunta:
 {pregunta}
 """
                 response = st.session_state.chat.send_message(prompt)
                 code = response.text.strip("```python\n").strip("```").strip()
 
-                exec_globals = {"df": df}
+                exec_globals = {"df": df, "plt": plt}
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
@@ -150,10 +146,12 @@ Pregunta:
                 output = buffer.getvalue()
 
                 if output.strip():
-                    st.session_state.history.append("💬 Respuesta:")
-                    st.session_state.history.append(output)
-                else:
-                    st.session_state.history.append("✅ Código ejecutado sin salida.")
+                    if "plt.show()" in code:
+                        st.session_state.history.append("📊 **Gráfica generada:**")
+                        st.pyplot()
+                    else:
+                        st.session_state.history.append("💬 **Respuesta:**")
+                        st.dataframe(pd.DataFrame(output.split("\n"), columns=["Resultados"]))
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
@@ -161,3 +159,4 @@ Pregunta:
         st.rerun()
 else:
     st.warning("Por favor, sube un archivo para continuar.")
+
