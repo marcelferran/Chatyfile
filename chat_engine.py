@@ -54,11 +54,13 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Responde a esta pregunta escribiendo solamente el código Python que RETORNA la respuesta. NO uses print() ni muestres la salida directamente; solo retorna el resultado.
 
 Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
-Si la pregunta requiere una gráfica, genera la gráfica usando matplotlib y muéstrala con plt.figure().
+Si la pregunta requiere una gráfica, genera la gráfica usando matplotlib y muéstrala con plt.figure(). En este caso, retorna None.
+
+Si la pregunta pide mostrar el DataFrame o una tabla (por ejemplo, 'muestra las primeras 5 filas'), retorna el DataFrame directamente (por ejemplo, df.head(5)).
 
 Pregunta:
 {pregunta}
@@ -77,7 +79,7 @@ Pregunta:
 
         with contextlib.redirect_stdout(buffer):
             try:
-                # Ejecutar el código
+                # Ejecutar el código para capturar gráficas
                 exec(code, exec_globals)
                 if plt.get_fignums():
                     fig = plt.gcf()
@@ -85,8 +87,6 @@ Pregunta:
             except Exception as e:
                 st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
                 return
-
-        output = buffer.getvalue()
 
         # Armar la respuesta sin mostrar el código
         DEBUG_MODE = False
@@ -99,6 +99,7 @@ Pregunta:
             response_dict["content"] += "📊 **Gráfica generada:**"
         else:
             try:
+                # Evaluar el código para obtener el resultado
                 result = eval(code, {"df": df, "pd": pd})
                 # Convertir el resultado en DataFrame si no lo es
                 if isinstance(result, pd.DataFrame):
@@ -107,6 +108,15 @@ Pregunta:
                     result_df = pd.DataFrame(result, columns=["Resultado"])
                 elif isinstance(result, (int, float, str)):
                     result_df = pd.DataFrame({"Resultado": [result]})
+                elif result is None:
+                    # Si el resultado es None, intentar manejar casos como df.head()
+                    if "head(" in code or "tail(" in code or "df[" in code or "df." in code:
+                        # Re-ejecutar el código en un entorno controlado para capturar el DataFrame
+                        result_df = eval(code, {"df": df, "pd": pd})
+                        if not isinstance(result_df, pd.DataFrame):
+                            result_df = pd.DataFrame({"Resultado": ["No se pudo obtener un DataFrame"]})
+                    else:
+                        result_df = pd.DataFrame({"Resultado": ["No se retornó ningún valor"]})
                 else:
                     result_df = pd.DataFrame({"Resultado": [str(result)]})
 
@@ -116,9 +126,13 @@ Pregunta:
 
                 response_dict["result_df"] = result_df
                 response_dict["content"] += "\n📋 **Resultados:**"
-            except:
+            except Exception as e:
                 # Si no se puede evaluar, usar la salida de texto como DataFrame
-                result_df = pd.DataFrame({"Resultado": [output.strip()]})
+                output = buffer.getvalue().strip()
+                if output:
+                    result_df = pd.DataFrame({"Resultado": [output]})
+                else:
+                    result_df = pd.DataFrame({"Resultado": ["No se obtuvo ninguna salida"]})
                 response_dict["result_df"] = result_df
                 response_dict["content"] += "\n📋 **Resultados:**"
 
