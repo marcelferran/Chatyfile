@@ -3,9 +3,9 @@ import streamlit as st
 # Función para mostrar el encabezado
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([2, 1])  
     with col1:
-        st.image("logo.jpeg", width=600)  
+        st.image("logo.jpeg", width=800) 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
