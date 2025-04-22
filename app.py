@@ -25,8 +25,8 @@ with st.container():
 
     # Configurar la API de Google Generative AI usando la clave desde secrets
     try:
-        configure_genai()
-        st.write("🔍 Clave encontrada:", st.secrets.get("GOOGLE_API_KEY"))
+        api_key = st.secrets["GOOGLE_API_KEY"]
+        configure_genai(api_key)
     except KeyError:
         st.error("No se encontró la clave API en st.secrets. Por favor, configura 'GOOGLE_API_KEY' en los secrets de Streamlit.")
         st.stop()
