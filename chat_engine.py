@@ -26,7 +26,7 @@ def iniciar_chat(df):
         "🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.",
         "✏️ Escribe 'salir' para finalizar."
     ]
-        
+
 
 # Función para procesar la pregunta y generar la respuesta
 def procesar_pregunta(pregunta, df):
@@ -80,6 +80,7 @@ Pregunta:
         # Si algo falla en el proceso de la conversación, mostramos el error
         st.session_state.history.append(f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}")
 
+
 # Mostrar respuestas guardadas en el historial
 def mostrar_historial():
     if "history" in st.session_state:
@@ -88,6 +89,7 @@ def mostrar_historial():
                 st.dataframe(entry)
             else:
                 st.write(entry)
+
 
 # Función principal
 def main():
@@ -103,16 +105,11 @@ def main():
         # Mostrar resumen del DataFrame
         mostrar_resumen_df(df)
 
-        if "chat" not in st.session_state:
-            st.session_state.chat = None
-            st.session_state.history = []
-
-        # Muestra historial del chat
-        mostrar_historial()
-
-        # Iniciar chat si no está iniciado
-        if st.session_state.chat is None:
+        if "chat" not in st.session_state:  # Inicia chat solo si no se ha iniciado
             iniciar_chat(df)
+
+        # Mostrar historial de respuestas y gráficas
+        mostrar_historial()
 
         with st.form(key='pregunta_form', clear_on_submit=True):
             pregunta = st.text_input("🤖 Pregunta:")
@@ -125,6 +122,7 @@ def main():
                 st.stop()
             else:
                 procesar_pregunta(pregunta, df)
+
 
 # Ejecutar la aplicación
 if __name__ == "__main__":
