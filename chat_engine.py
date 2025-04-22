@@ -54,13 +54,20 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo solamente el código Python que RETORNA la respuesta. NO uses print() ni muestres la salida directamente; solo retorna el resultado.
+Responde a esta pregunta escribiendo SOLO el código Python que RETORNA la respuesta. NO uses print() ni muestres la salida directamente; solo retorna el resultado.
 
-Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+Instrucciones:
+- Para preguntas que piden mostrar una tabla o DataFrame (por ejemplo, 'muestra las primeras 5 filas'), retorna el DataFrame directamente (por ejemplo, df.head(5)).
+- Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores de urea hay'), usa .count() o len() sobre el DataFrame filtrado.
+- Para preguntas que piden sumas o totales (por ejemplo, 'cuál es el total comprado'), usa .sum() sobre la columna correspondiente.
+- Para preguntas sobre productos como 'urea', usa búsquedas flexibles con .str.contains('urea', case=False, na=False) y considera variaciones (por ejemplo, 'Urea 46%', 'urea granulada').
+- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y retorna None.
+- Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
-Si la pregunta requiere una gráfica, genera la gráfica usando matplotlib y muéstrala con plt.figure(). En este caso, retorna None.
-
-Si la pregunta pide mostrar el DataFrame o una tabla (por ejemplo, 'muestra las primeras 5 filas'), retorna el DataFrame directamente (por ejemplo, df.head(5)).
+Ejemplos:
+- Pregunta: "Muestra las primeras 5 filas" → Código: df.head(5)
+- Pregunta: "Cuántos productos contienen 'urea'" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()
+- Pregunta: "Total de Cantidad para 'urea' en 2025" → Código: df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()
 
 Pregunta:
 {pregunta}
@@ -73,22 +80,23 @@ Pregunta:
             st.session_state.history.append({"role": "assistant", "content": "❌ **No se generó código**. Intenta preguntar de otra forma."})
             return
 
-        buffer = io.StringIO()
-        exec_globals = {"df": df, "plt": plt, "pd": pd}
+        # Entorno para ejecutar el código
+        exec_globals = {"df": df, "plt": plt, "pd": pd, "__result__": None}
         fig = None
 
-        with contextlib.redirect_stdout(buffer):
-            try:
-                # Ejecutar el código para capturar gráficas
-                exec(code, exec_globals)
-                if plt.get_fignums():
-                    fig = plt.gcf()
-                plt.close('all')
-            except Exception as e:
-                st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
-                return
+        try:
+            # Ejecutar el código y capturar el resultado
+            exec(f"__result__ = {code}", exec_globals)
+            result = exec_globals["__result__"]
+            # Capturar gráfica si existe
+            if plt.get_fignums():
+                fig = plt.gcf()
+            plt.close('all')
+        except Exception as e:
+            st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
+            return
 
-        # Armar la respuesta sin mostrar el código
+        # Armar la respuesta
         DEBUG_MODE = False
         response_dict = {"role": "assistant", "content": ""}
         if DEBUG_MODE:
@@ -98,43 +106,25 @@ Pregunta:
             response_dict["figure"] = fig
             response_dict["content"] += "📊 **Gráfica generada:**"
         else:
-            try:
-                # Evaluar el código para obtener el resultado
-                result = eval(code, {"df": df, "pd": pd})
-                # Convertir el resultado en DataFrame si no lo es
-                if isinstance(result, pd.DataFrame):
-                    result_df = result
-                elif isinstance(result, (list, tuple)):
-                    result_df = pd.DataFrame(result, columns=["Resultado"])
-                elif isinstance(result, (int, float, str)):
-                    result_df = pd.DataFrame({"Resultado": [result]})
-                elif result is None:
-                    # Si el resultado es None, intentar manejar casos como df.head()
-                    if "head(" in code or "tail(" in code or "df[" in code or "df." in code:
-                        # Re-ejecutar el código en un entorno controlado para capturar el DataFrame
-                        result_df = eval(code, {"df": df, "pd": pd})
-                        if not isinstance(result_df, pd.DataFrame):
-                            result_df = pd.DataFrame({"Resultado": ["No se pudo obtener un DataFrame"]})
-                    else:
-                        result_df = pd.DataFrame({"Resultado": ["No se retornó ningún valor"]})
-                else:
-                    result_df = pd.DataFrame({"Resultado": [str(result)]})
+            # Convertir el resultado en DataFrame
+            if isinstance(result, pd.DataFrame):
+                result_df = result
+            elif isinstance(result, (list, tuple)):
+                result_df = pd.DataFrame(result, columns=["Resultado"])
+            elif isinstance(result, (int, float, str)):
+                result_df = pd.DataFrame({"Resultado": [result]})
+            elif result is None:
+                # Manejar casos donde el código no retorna nada útil
+                result_df = pd.DataFrame({"Resultado": ["No se retornó ningún valor. Intenta reformular la pregunta."]})
+            else:
+                result_df = pd.DataFrame({"Resultado": [str(result)]})
 
-                # Redondear números a 2 decimales para columnas numéricas
-                for col in result_df.select_dtypes(include=['float64', 'float32']).columns:
-                    result_df[col] = result_df[col].round(2)
+            # Redondear números a 2 decimales para columnas numéricas
+            for col in result_df.select_dtypes(include=['float64', 'float32']).columns:
+                result_df[col] = result_df[col].round(2)
 
-                response_dict["result_df"] = result_df
-                response_dict["content"] += "\n📋 **Resultados:**"
-            except Exception as e:
-                # Si no se puede evaluar, usar la salida de texto como DataFrame
-                output = buffer.getvalue().strip()
-                if output:
-                    result_df = pd.DataFrame({"Resultado": [output]})
-                else:
-                    result_df = pd.DataFrame({"Resultado": ["No se obtuvo ninguna salida"]})
-                response_dict["result_df"] = result_df
-                response_dict["content"] += "\n📋 **Resultados:**"
+            response_dict["result_df"] = result_df
+            response_dict["content"] += "\n📋 **Resultados:**"
 
         # Guardar la respuesta en el historial
         st.session_state.history.append(response_dict)
