@@ -1,11 +1,12 @@
 import io
+import ast
 import contextlib
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import google.generativeai as genai
-import numpy as np
-import ast
+
 
 # Función para iniciar el chat
 def iniciar_chat(df):
@@ -120,7 +121,7 @@ Pregunta:
         code_lines = [line for line in code.split('\n') if not line.strip().startswith('import')]
         code = '\n'.join(code_lines).strip()
 
-        # Validar que el código sea sintácticamente válido
+        # Validar que el código sea sintáticamente válido
         try:
             ast.parse(code)
         except SyntaxError as e:
