@@ -52,6 +52,10 @@ st.markdown("""
         position: fixed; bottom: 0; width: 100%;
         background-color: #f0f2f6; padding: 10px;
     }
+    .stDataFrame {
+        border-radius: 10px; border: 1px solid #ccc;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -97,7 +101,7 @@ if uploaded_file is not None:
     st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]), width=700)
 
     if st.session_state.chat is None:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         st.session_state.chat = model.start_chat(history=[
             {
                 "role": "user",
@@ -114,11 +118,12 @@ if uploaded_file is not None:
     st.markdown('<div class="message-container">', unsafe_allow_html=True)
     for item in st.session_state.history:
         if isinstance(item, pd.DataFrame):
-            st.dataframe(item, width=800, height=300)
+            st.dataframe(item.style.set_properties(**{'border': '1px solid #ccc', 'box-shadow': '2px 2px 5px rgba(0,0,0,0.2)'}), width=800, height=300)
         else:
             st.write(item)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # Contenedor de entrada fijo en la parte inferior
     with st.container():
         st.markdown('<div class="input-container">', unsafe_allow_html=True)
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
@@ -170,8 +175,6 @@ Pregunta:
 
             except Exception as e:
                 st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
-
-    st.rerun()
 
 else:
     st.warning("Por favor, sube un archivo para continuar.")
