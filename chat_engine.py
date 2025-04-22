@@ -1,10 +1,11 @@
 import io
 import contextlib
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import google.generativeai as genai
-import numpy as np
+
 
 # Función para iniciar el chat
 def iniciar_chat(df):
@@ -69,11 +70,16 @@ Instrucciones:
 - Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
-- Pregunta: "Muestra las primeras 5 filas" → Código: df.head(5)
-- Pregunta: "Cuántos productos contienen 'urea'" → Código: pd.DataFrame({'Resultado': [df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()]})
-- Pregunta: "Total de Cantidad para 'urea' en 2025" → Código: pd.DataFrame({'Resultado': [df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()]})
-- Pregunta: "Cuántos proveedores venden urea, lista y monto comprado" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
-- Pregunta: "Proveedores en Refacciones y Mano de Obra" → Código: pd.DataFrame({'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()}).merge(pd.DataFrame({'Proveedor': df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique()}), on='Proveedor')
+- Pregunta: "Muestra las primeras 5 filas"
+  Código: df.head(5)
+- Pregunta: "Cuántos productos contienen 'urea'"
+  Código: pd.DataFrame({{'Resultado': [df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()]}})
+- Pregunta: "Total de Cantidad para 'urea' en 2025"
+  Código: pd.DataFrame({{'Resultado': [df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()]}})
+- Pregunta: "Cuántos proveedores venden urea, lista y monto comprado"
+  Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
+- Pregunta: "Proveedores en Refacciones y Mano de Obra"
+  Código: pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()}}).merge(pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique()}}), on='Proveedor')
 
 Pregunta:
 {pregunta}
