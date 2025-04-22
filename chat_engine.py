@@ -61,13 +61,14 @@ Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resul
 Instrucciones:
 - Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
 - Para conteos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y envuelve el resultado en un DataFrame.
-- For sums (e.g., 'total comprado'), use .sum() and return a DataFrame.
+- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame. Usa la columna 'Cantidad' para sumas de compras, a menos que se especifique otra columna.
 - Para búsquedas de productos como 'urea', usa .str.contains('urea', case=False, na=False).
 - Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
 - Para intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
 - Para conteos de múltiples categorías (por ejemplo, 'proveedores de Refacciones y Mano de Obra'), crea un DataFrame con una columna para la categoría y otra para el total.
-- Para gráficos, usa matplotlib (plt.figure(figsize=(4, 4)), plt.pie(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. Usa un tamaño de figura pequeño (4x4 pulgadas) para Streamlit.
+- Para gráficos, usa matplotlib (plt.figure(figsize=(4, 4)), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. Usa un tamaño de figura pequeño (4x4 pulgadas) para Streamlit. Para gráficas de barras que comparan años, alinea los datos con reindex para manejar meses faltantes, rellenando con ceros.
 - Usa la columna 'Categoría' para filtros de categorías como 'Refacciones' o 'Mano de Obra'.
+- Usa la columna 'Mes' para agrupaciones mensuales y 'Año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
@@ -88,6 +89,20 @@ Ejemplos:
     top_5 = df.groupby('Proveedor')['Cantidad'].sum().nlargest(5)
     plt.figure(figsize=(4, 4))
     plt.pie(top_5, labels=top_5.index, autopct='%1.1f%%')
+    None
+- Pregunta: "Dame una gráfica de barras diferenciando compras por mes en 2024 y 2025"
+  Código:
+    compras_2024 = df[df['Año'] == 2024].groupby('Mes')['Cantidad'].sum().reindex(range(1, 13), fill_value=0)
+    compras_2025 = df[df['Año'] == 2025].groupby('Mes')['Cantidad'].sum().reindex(range(1, 13), fill_value=0)
+    meses = range(1, 13)
+    plt.figure(figsize=(4, 4))
+    plt.bar([x - 0.2 for x in meses], compras_2024, width=0.4, label='2024')
+    plt.bar([x + 0.2 for x in meses], compras_2025, width=0.4, label='2025')
+    plt.xlabel('Mes')
+    plt.ylabel('Total Compras')
+    plt.xticks(meses)
+    plt.legend()
+    plt.tight_layout()
     None
 
 Pregunta:
