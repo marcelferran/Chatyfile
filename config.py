@@ -6,20 +6,24 @@ DEFAULT_COLOR_PALETTE = 'blues'  # Paleta de colores por defecto para las gráfi
 
 # Función para obtener la clave de API
 def get_api_key():
+    # Primero verificamos si la clave está en st.secrets
     if "GEMINI_API_KEY" in st.secrets:
         return st.secrets["GEMINI_API_KEY"]
+    # Luego verificamos si la clave está en st.session_state (para no pedirla cada vez)
     elif "GEMINI_API_KEY" in st.session_state:
         return st.session_state["GEMINI_API_KEY"]
+    # Si no está en ninguna de las dos opciones, le pedimos al usuario que la ingrese
     else:
         api_key = st.text_input("🔑 Introduce tu GEMINI_API_KEY", type="password")
         if api_key:
+            # Guardamos la API Key en st.session_state para evitar pedirla nuevamente
             st.session_state["GEMINI_API_KEY"] = api_key
         return api_key
 
-# Función para configurar Gemini
 def configure_genai(api_key):
-    import google.generativeai as genai
-    genai.configure(api_key=api_key)
+    if api_key:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
 
 # Función para obtener la configuración del tamaño de las gráficas y tablas
 def get_graph_settings():
