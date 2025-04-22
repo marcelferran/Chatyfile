@@ -31,7 +31,7 @@ def mostrar_historial():
     for msg in st.session_state.history:
         if msg["role"] == "user":
             st.markdown(f"**Usuario**: {msg['content']}")
-        elif msg["role": "assistant":
+        elif msg["role"] == "assistant":
             st.markdown(f"**Asistente**: {msg['content']}")
             if "figure" in msg:
                 st.pyplot(msg["figure"])
@@ -62,7 +62,7 @@ Instrucciones:
 - Para preguntas que piden sumas o totales (por ejemplo, 'total comprado'), usa .sum() sobre la columna correspondiente.
 - Para preguntas sobre productos como 'urea', usa búsquedas flexibles con .str.contains('urea', case=False, na=False) y considera variaciones (por ejemplo, 'Urea 46%', 'urea granulada').
 - Para preguntas que piden listas con valores asociados (por ejemplo, 'lista de proveedores y monto comprado'), usa .groupby() y .sum() para crear un DataFrame con las columnas adecuadas.
-- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y escribe None como la última línea.
+- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), and escribe None como la última línea.
 - Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
