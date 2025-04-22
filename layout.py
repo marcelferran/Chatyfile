@@ -8,17 +8,15 @@ import streamlit as st
 #     st.markdown('</div>', unsafe_allow_html=True)
 
 def show_header():
-    st.markdown("""
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1>📄 Chatyfile</h1>
-            </div>
-            <div>
-                <img src="logo.jpeg" width="400">
-            </div>
-        </div>
-        <hr>
-    """, unsafe_allow_html=True)
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        st.title("📄 Chatyfile")
+    
+    with col2:
+        st.image("logo.jpeg", width=150)  # Ajusta el tamaño si lo necesitas
+
+    st.markdown("---")
 
 # Función para mostrar el pie de página
 def show_footer():
