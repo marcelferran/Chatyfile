@@ -5,7 +5,7 @@ def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 2])
     with col1:
-        st.image("logo.jpeg", width=200)  # Reduje el tamaño del logo para mejor balance
+        st.image("logo.jpeg", width=800)
     # with col2:
     #     st.markdown("<h1 style='color: #ffffff; margin-top: 20px;'>📄 Chatyfile</h1>", unsafe_allow_html=True)
     #     st.markdown("<p style='color: #ffffff; font-size: 16px;'>Tu asistente para analizar datos</p>", unsafe_allow_html=True)
