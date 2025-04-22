@@ -16,18 +16,14 @@ import streamlit as st
 #     st.markdown("---")
 
 def show_header():
-    st.markdown("""
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="flex: 1;">
-            <br><br>
-            <h3>📄 Chatyfile</h3>
-        </div>
-        <div>
-            <img src="logo.jpeg" width="600"/>
-        </div>
-    </div>
-    <hr>
-    """, unsafe_allow_html=True)
+    col1, col2 = st.columns([2, 1])
+    with col2:
+        st.image("logo.jpeg", width=600)  # Asegúrate que logo.jpeg esté en la raíz del proyecto
+
+    with col1:
+        st.markdown("<br><br><h3>📄 Chatyfile</h3>", unsafe_allow_html=True)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
 def show_footer():
