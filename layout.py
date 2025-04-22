@@ -1,24 +1,10 @@
 import streamlit as st
 
 # Función para mostrar el encabezado
-# def show_header():
-#     col1, col2 = st.columns([3, 1])
-
-#     with col1:
-#         # Espaciado vertical con markdown
-#         st.markdown("<br><br>", unsafe_allow_html=True)
-#         # Título más pequeño usando markdown (h3 o h4)
-#         st.markdown("### 📄 Chatyfile")
-
-#     with col2:
-#         st.image("logo.jpeg", width=1200)
-
-#     st.markdown("---")
-
 def show_header():
     col1, col2 = st.columns([2, 1])
     with col2:
-        st.image("logo.jpeg", width=600)  # Asegúrate que logo.jpeg esté en la raíz del proyecto
+        st.image("logo.jpeg", width=600)  
 
     with col1:
         st.markdown("<br><br><h3>📄 Chatyfile</h3>", unsafe_allow_html=True)
