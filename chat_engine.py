@@ -113,12 +113,3 @@ Pregunta:
 
     except Exception as e:
         st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
-
-# Función para borrar el historial del chat
-def borrar_historial():
-    if st.button('Borrar chat'):
-        st.session_state.history = [
-            {"role": "system", "content": "🟢 Chat borrado. Comienza una nueva conversación."},
-            {"role": "system", "content": "✏️ Escribe 'salir' para finalizar."}
-        ]
-        st.experimental_rerun()  # Refrescar la página para reflejar el historial limpio
