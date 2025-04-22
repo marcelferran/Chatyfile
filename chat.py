@@ -31,42 +31,18 @@ st.set_page_config(
 # ==== ESTILOS PERSONALIZADOS ====
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #f0f2f6;
-    }
+    .stApp { background-color: #f0f2f6; }
     .header {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        background-color: #1f77b4;
-        border-radius: 10px;
+        display: flex; align-items: center; padding: 10px;
+        background-color: #1f77b4; border-radius: 10px;
     }
-    .header img {
-        width: 400px;
-        margin-right: 20px;
-    }
-    h1 {
-        color: #ffffff;
-        font-family: 'Arial', sans-serif;
-        margin: 0;
-    }
-    .css-1d391kg {
-        background-color: #ffffff;
-        border-right: 2px solid #1f77b4;
-    }
-    .stButton>button {
-        background-color: #ff7f0e;
-        color: white;
-        border-radius: 5px;
-    }
+    .header img { width: 400px; margin-right: 20px; }
+    h1 { color: #ffffff; font-family: 'Arial', sans-serif; margin: 0; }
+    .css-1d391kg { background-color: #ffffff; border-right: 2px solid #1f77b4; }
+    .stButton>button { background-color: #ff7f0e; color: white; border-radius: 5px; }
     .footer {
-        text-align: center;
-        padding: 10px;
-        background-color: #1f77b4;
-        color: white;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
+        text-align: center; padding: 10px; background-color: #1f77b4;
+        color: white; position: fixed; bottom: 0; width: 100%;
         border-top: 2px solid #ffffff;
     }
     </style>
@@ -153,6 +129,8 @@ Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, `.str.contains('urea', case=False, na=False)`) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
 Pregunta:
 {pregunta}
