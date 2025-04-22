@@ -31,7 +31,7 @@ def mostrar_historial():
     for msg in st.session_state.history:
         if msg["role"] == "user":
             st.markdown(f"**Usuario**: {msg['content']}")
-        elif msg["role"] == "assistant":
+        elif msg["role": "assistant":
             st.markdown(f"**Asistente**: {msg['content']}")
             if "figure" in msg:
                 st.pyplot(msg["figure"])
@@ -54,20 +54,22 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que RETORNA la respuesta. NO uses print() ni muestres la salida directamente; solo retorna el resultado.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. NO uses print(), return, ni muestres la salida directamente; escribe solo la expresión o las operaciones que generan el resultado.
 
 Instrucciones:
-- Para preguntas que piden mostrar una tabla o DataFrame (por ejemplo, 'muestra las primeras 5 filas'), retorna el DataFrame directamente (por ejemplo, df.head(5)).
-- Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores de urea hay'), usa .count() o len() sobre el DataFrame filtrado.
-- Para preguntas que piden sumas o totales (por ejemplo, 'cuál es el total comprado'), usa .sum() sobre la columna correspondiente.
+- Para preguntas que piden mostrar una tabla o DataFrame (por ejemplo, 'muestra las primeras 5 filas'), usa operaciones como df.head(5).
+- Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() sobre el DataFrame filtrado.
+- Para preguntas que piden sumas o totales (por ejemplo, 'total comprado'), usa .sum() sobre la columna correspondiente.
 - Para preguntas sobre productos como 'urea', usa búsquedas flexibles con .str.contains('urea', case=False, na=False) y considera variaciones (por ejemplo, 'Urea 46%', 'urea granulada').
-- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y retorna None.
+- Para preguntas que piden listas con valores asociados (por ejemplo, 'lista de proveedores y monto comprado'), usa .groupby() y .sum() para crear un DataFrame con las columnas adecuadas.
+- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y escribe None como la última línea.
 - Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas" → Código: df.head(5)
 - Pregunta: "Cuántos productos contienen 'urea'" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()
 - Pregunta: "Total de Cantidad para 'urea' en 2025" → Código: df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()
+- Pregunta: "Cuántos proveedores venden urea, lista y monto comprado" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
 
 Pregunta:
 {pregunta}
@@ -79,6 +81,10 @@ Pregunta:
         if not code:
             st.session_state.history.append({"role": "assistant", "content": "❌ **No se generó código**. Intenta preguntar de otra forma."})
             return
+
+        # Limpiar el código para evitar 'return' o líneas inválidas
+        code_lines = [line for line in code.split('\n') if not line.strip().startswith('return ')]
+        code = '\n'.join(code_lines)
 
         # Entorno para ejecutar el código
         exec_globals = {"df": df, "plt": plt, "pd": pd, "__result__": None}
@@ -92,8 +98,11 @@ Pregunta:
             if plt.get_fignums():
                 fig = plt.gcf()
             plt.close('all')
+        except SyntaxError as e:
+            st.session_state.history.append({"role": "assistant", "content": f"❌ **Error de sintaxis en el código generado**: {str(e)}. Intenta reformular la pregunta."})
+            return
         except Exception as e:
-            st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}"})
+            st.session_state.history.append({"role": "assistant", "content": f"❌ **Error al ejecutar el código**: {str(e)}. Intenta reformular la pregunta."})
             return
 
         # Armar la respuesta
@@ -109,12 +118,13 @@ Pregunta:
             # Convertir el resultado en DataFrame
             if isinstance(result, pd.DataFrame):
                 result_df = result
+            elif isinstance(result, pd.Series):
+                result_df = result.reset_index(name='Resultado')
             elif isinstance(result, (list, tuple)):
                 result_df = pd.DataFrame(result, columns=["Resultado"])
             elif isinstance(result, (int, float, str)):
                 result_df = pd.DataFrame({"Resultado": [result]})
             elif result is None:
-                # Manejar casos donde el código no retorna nada útil
                 result_df = pd.DataFrame({"Resultado": ["No se retornó ningún valor. Intenta reformular la pregunta."]})
             else:
                 result_df = pd.DataFrame({"Resultado": [str(result)]})
@@ -130,7 +140,7 @@ Pregunta:
         st.session_state.history.append(response_dict)
 
     except Exception as e:
-        st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
+        st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}. Intenta reformular la pregunta."})
 
 # Función para borrar el historial del chat
 def borrar_historial():
