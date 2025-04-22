@@ -1,11 +1,24 @@
 import streamlit as st
 
 # Función para mostrar el encabezado
+# def show_header():
+#     st.markdown('<div class="header">', unsafe_allow_html=True)
+#     st.image("logo.jpeg", width=400)
+#     st.title("📄 Chatyfile")
+#     st.markdown('</div>', unsafe_allow_html=True)
+
 def show_header():
-    st.markdown('<div class="header">', unsafe_allow_html=True)
-    st.image("logo.jpeg", width=400)
-    st.title("📄 Chatyfile")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>📄 Chatyfile</h1>
+            </div>
+            <div>
+                <img src="logo.jpeg" width="400">
+            </div>
+        </div>
+        <hr>
+    """, unsafe_allow_html=True)
 
 # Función para mostrar el pie de página
 def show_footer():
