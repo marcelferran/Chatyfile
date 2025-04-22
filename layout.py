@@ -18,7 +18,7 @@ def show_header():
 # Función para mostrar el pie de página
 def show_footer():
     st.markdown("""
-        <div class="footer">
+        <div class="footer" style="text-align: left; margin-top: 50px;">
             <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
         </div>
     """, unsafe_allow_html=True)
