@@ -26,11 +26,6 @@ def iniciar_chat(df):
         "🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.",
         "✏️ Escribe 'salir' para finalizar."
     ]
-
-# Función para mostrar el historial de conversación
-def mostrar_historial():
-    for msg in st.session_state.history:
-        st.write(msg)
         
 
 # Función para procesar la pregunta y generar la respuesta
@@ -84,7 +79,6 @@ Pregunta:
     except Exception as e:
         # Si algo falla en el proceso de la conversación, mostramos el error
         st.session_state.history.append(f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}")
-        
 
 # Mostrar respuestas guardadas en el historial
 def mostrar_historial():
@@ -94,6 +88,47 @@ def mostrar_historial():
                 st.dataframe(entry)
             else:
                 st.write(entry)
+
+# Función principal
+def main():
+    # Configuración inicial
+    st.set_page_config(page_title="Chatyfile", page_icon="📄", layout="wide", initial_sidebar_state="expanded")
+    
+    # Cargar archivo y mostrar el resumen
+    uploaded_file = st.sidebar.file_uploader("Sube un archivo", type=["csv", "xlsx"])
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        st.session_state.df = df  # Guardar el DataFrame en el estado de la sesión
+
+        # Mostrar resumen del DataFrame
+        mostrar_resumen_df(df)
+
+        if "chat" not in st.session_state:
+            st.session_state.chat = None
+            st.session_state.history = []
+
+        # Muestra historial del chat
+        mostrar_historial()
+
+        # Iniciar chat si no está iniciado
+        if st.session_state.chat is None:
+            iniciar_chat(df)
+
+        with st.form(key='pregunta_form', clear_on_submit=True):
+            pregunta = st.text_input("🤖 Pregunta:")
+            submitted = st.form_submit_button(label="Enviar")
+
+        if submitted and pregunta:
+            if pregunta.lower() == "salir":
+                st.session_state.history.append("👋 Adios.")
+                st.session_state.chat = None
+                st.stop()
+            else:
+                procesar_pregunta(pregunta, df)
+
+# Ejecutar la aplicación
+if __name__ == "__main__":
+    main()
                 
 
 # Función para borrar el historial del chat
