@@ -1,9 +1,9 @@
-import streamlit as st
-import pandas as pd
-import google.generativeai as genai
 import io
 import contextlib
+import pandas as pd
+import streamlit as st
 import matplotlib.pyplot as plt
+import google.generativeai as genai
 
 # ==== CONFIGURAR LA API DE GEMINI ====
 if "GEMINI_API_KEY" in st.secrets:
@@ -61,7 +61,7 @@ st.markdown("""
 
 # ==== BARRA LATERAL ====
 with st.sidebar:
-    st.header("🤖 Opciones")
+    st.header("🤖 DATOS")
     uploaded_file = st.file_uploader("Sube tu archivo", type=["csv"])
 
 # ==== PIE DE PÁGINA ====
