@@ -90,26 +90,28 @@ Pregunta:
         output = buffer.getvalue()
 
         # Guardar la respuesta en el historial
-        response_dict = {"role": "assistant", "content": f"💻 **Código ejecutado**:\n```python\n{code}\n```"}
+        DEBUG_MODE = False  # Cambia a True si quieres ver el código generado
+        response_dict = {"role": "assistant", "content": ""}
+        if DEBUG_MODE:
+            response_dict["content"] += f"💻 **Código ejecutado**:\n```python\n{code}\n```"
         
         if fig:
             response_dict["figure"] = fig
-            response_dict["content"] += "\n📊 **Gráfica generada**:"
+            response_dict["content"] += "📊 **Gráfica generada:**"
         elif output.strip():
             try:
-                # Intentar evaluar si el output es un DataFrame
                 result = eval(code, {"df": df, "pd": pd})
                 if isinstance(result, pd.DataFrame):
                     response_dict["result_df"] = result
-                    response_dict["content"] += "\n📋 **Resultados**:"
+                    response_dict["content"] += "\n📋 **Resultados:**"
                 else:
-                    response_dict["content"] += f"\n📋 **Resultados**:\n{output}"
+                    response_dict["content"] += f"\n📋 **Resultados:**\n{output}"
             except:
-                response_dict["content"] += f"\n📋 **Resultados**:\n{output}"
+                response_dict["content"] += f"\n📋 **Resultados:**\n{output}"
         else:
-            response_dict["content"] += "\n📋 **Resultados**: (Sin salida de texto)"
-
-        st.session_state.history.append(response_dict)
+            response_dict["content"] += "\n📋 **Resultados:** (Sin salida de texto)"
+        
+                st.session_state.history.append(response_dict)
 
     except Exception as e:
         st.session_state.history.append({"role": "assistant", "content": f"❌ **Algo salió mal con la consulta. Detalles**: {str(e)}"})
