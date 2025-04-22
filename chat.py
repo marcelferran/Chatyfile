@@ -44,18 +44,6 @@ st.markdown("""
         color: white; position: fixed; bottom: 0; width: 100%;
         border-top: 2px solid #ffffff;
     }
-    .message-container {
-        max-height: 500px; overflow-y: auto; padding: 10px;
-        background-color: #ffffff; border-radius: 10px;
-    }
-    .input-container {
-        position: fixed; bottom: 0; width: 100%;
-        background-color: #f0f2f6; padding: 10px;
-    }
-    .stDataFrame {
-        border-radius: 10px; border: 1px solid #ccc;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +86,7 @@ if uploaded_file is not None:
     st.write(f"- Número de filas: {num_rows}")
     st.write(f"- Número de columnas: {num_cols}")
     st.write("**Nombres de las columnas:**")
-    st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]), width=700)
+    st.dataframe(pd.DataFrame(df.columns, columns=["Columnas"]))
 
     if st.session_state.chat is None:
         model = genai.GenerativeModel('gemini-2.0-flash')
@@ -115,35 +103,62 @@ if uploaded_file is not None:
         st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu DataFrame.")
         st.session_state.history.append("✏️ Escribe 'salir' para finalizar.")
 
-    st.markdown('<div class="message-container">', unsafe_allow_html=True)
-    for item in st.session_state.history:
-        if isinstance(item, pd.DataFrame):
-            st.dataframe(item.style.set_properties(**{'border': '1px solid #ccc', 'box-shadow': '2px 2px 5px rgba(0,0,0,0.2)'}), width=800, height=300)
-        else:
-            st.write(item)
-    st.markdown('</div>', unsafe_allow_html=True)
+    for message in st.session_state.history:
+        st.write(message)
 
-    # Contenedor de entrada fijo en la parte inferior
-    with st.container():
-        st.markdown('<div class="input-container">', unsafe_allow_html=True)
+    with st.form(key='pregunta_form', clear_on_submit=True):
         pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-        submitted = st.button("Enviar")
-        st.markdown('</div>', unsafe_allow_html=True)
+        submitted = st.form_submit_button(label="Enviar", disabled=False)
 
     if submitted and pregunta:
         if pregunta.lower() == "salir":
             st.session_state.history.append("👋 Adios.")
             st.session_state.chat = None
+            st.rerun()
         else:
             try:
-                response = st.session_state.chat.send_message(pregunta)
-                st.session_state.history.append(f"**🤖 Pregunta:** {pregunta}")
-                st.session_state.history.append(f"💬 **Respuesta:** {response.text}")
+                prompt = f"""
+Tienes un DataFrame de pandas llamado `df` cargado en memoria.
+Estas son las columnas reales: {', '.join(df.columns)}.
+NO CAMBIES los nombres de las columnas.
+
+Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, `.str.contains('urea', case=False, na=False)`) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
+
+Si la pregunta requiere una gráfica, genera la gráfica usando `matplotlib` y muéstrala con `st.pyplot()`.
+
+Pregunta:
+{pregunta}
+"""
+                response = st.session_state.chat.send_message(prompt)
+                code = response.text.strip("```python\n").strip("```").strip()
+
+                exec_globals = {"df": df, "plt": plt}
+                buffer = io.StringIO()
+
+                with contextlib.redirect_stdout(buffer):
+                    try:
+                        exec(code, exec_globals)
+                    except Exception as e:
+                        st.session_state.history.append(f"❌ Error al ejecutar el código: {str(e)}")
+
+                output = buffer.getvalue()
+
+                if output.strip():
+                    if "plt.show()" in code:
+                        st.session_state.history.append("📊 **Gráfica generada:**")
+                        st.pyplot()
+                    else:
+                        result_df = pd.DataFrame([output.split("\n")]).T
+                        result_df.columns = ["Resultados"]
+                        st.session_state.history.append("💬 **Respuesta:**")
+                        st.session_state.history.append(result_df)
 
             except Exception as e:
-                st.session_state.history.append(f"❌ Error: {str(e)}")
+                st.session_state.history.append(f"❌ Error al procesar o ejecutar: {str(e)}")
 
-    st.rerun()
-
+        st.rerun()
 else:
     st.warning("Por favor, sube un archivo para continuar.")
+
