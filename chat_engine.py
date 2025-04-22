@@ -31,7 +31,7 @@ def mostrar_historial():
     for msg in st.session_state.history:
         if msg["role"] == "user":
             st.markdown(f"**Usuario**: {msg['content']}")
-        elif msg["role"] == "assistant":
+        elif msg["role": "assistant":
             st.markdown(f"**Asistente**: {msg['content']}")
             if "figure" in msg:
                 st.pyplot(msg["figure"])
@@ -54,22 +54,25 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. NO uses print(), return, ni muestres la salida directamente; escribe solo la expresión o las operaciones que generan el resultado.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final como un DataFrame. NO uses print(), return, .tolist(), .values, ni muestres la salida directamente; escribe solo la expresión o las operaciones que generan un DataFrame.
 
 Instrucciones:
+- Siempre devuelve un DataFrame, incluso para listas o conteos. Usa pd.DataFrame o .reset_index() si es necesario.
 - Para preguntas que piden mostrar una tabla o DataFrame (por ejemplo, 'muestra las primeras 5 filas'), usa operaciones como df.head(5).
-- Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() sobre el DataFrame filtrado.
-- Para preguntas que piden sumas o totales (por ejemplo, 'total comprado'), usa .sum() sobre la columna correspondiente.
+- Para preguntas que piden contar elementos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y envuelve el resultado en un DataFrame.
+- Para preguntas que piden sumas o totales (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame.
 - Para preguntas sobre productos como 'urea', usa búsquedas flexibles con .str.contains('urea', case=False, na=False) y considera variaciones (por ejemplo, 'Urea 46%', 'urea granulada').
 - Para preguntas que piden listas con valores asociados (por ejemplo, 'lista de proveedores y monto comprado'), usa .groupby() y .sum() para crear un DataFrame con las columnas adecuadas.
-- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), and escribe None como la última línea.
+- Para preguntas que piden intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), filtra por cada categoría, encuentra la intersección de proveedores, y devuelve un DataFrame con los resultados.
+- Si la pregunta requiere una gráfica, genera la gráfica con matplotlib, usa plt.figure(), y escribe None como la última línea.
 - Asegúrate de usar las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas" → Código: df.head(5)
-- Pregunta: "Cuántos productos contienen 'urea'" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()
-- Pregunta: "Total de Cantidad para 'urea' en 2025" → Código: df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()
+- Pregunta: "Cuántos productos contienen 'urea'" → Código: pd.DataFrame({'Resultado': [df[df['Producto'].str.contains('urea', case=False, na=False)]['Producto'].count()]})
+- Pregunta: "Total de Cantidad para 'urea' en 2025" → Código: pd.DataFrame({'Resultado': [df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()]})
 - Pregunta: "Cuántos proveedores venden urea, lista y monto comprado" → Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
+- Pregunta: "Proveedores en Refacciones y Mano de Obra" → Código: pd.DataFrame({'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()[pd.Series(df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()).isin(df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique())]})
 
 Pregunta:
 {pregunta}
@@ -120,14 +123,18 @@ Pregunta:
                 result_df = result
             elif isinstance(result, pd.Series):
                 result_df = result.reset_index(name='Resultado')
-            elif isinstance(result, (list, tuple)):
-                result_df = pd.DataFrame(result, columns=["Resultado"])
+            elif isinstance(result, (list, tuple, np.ndarray)):
+                # Convertir listas o arrays en DataFrame con columna 'Proveedor' si la pregunta menciona proveedores
+                if 'proveedor' in pregunta.lower():
+                    result_df = pd.DataFrame({'Proveedor': result})
+                else:
+                    result_df = pd.DataFrame({'Resultado': result})
             elif isinstance(result, (int, float, str)):
-                result_df = pd.DataFrame({"Resultado": [result]})
+                result_df = pd.DataFrame({'Resultado': [result]})
             elif result is None:
-                result_df = pd.DataFrame({"Resultado": ["No se retornó ningún valor. Intenta reformular la pregunta."]})
+                result_df = pd.DataFrame({'Resultado': ['No se retornó ningún valor. Intenta reformular la pregunta.']})
             else:
-                result_df = pd.DataFrame({"Resultado": [str(result)]})
+                result_df = pd.DataFrame({'Resultado': [str(result)]})
 
             # Redondear números a 2 decimales para columnas numéricas
             for col in result_df.select_dtypes(include=['float64', 'float32']).columns:
