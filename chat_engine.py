@@ -152,7 +152,7 @@ Pregunta:
             return
 
         # Armar la respuesta
-        DEBUG_MODE = True  # Habilitado para depurar el código generado
+        DEBUG_MODE = False  # Habilita para depurar mostrando el codigo generado
         response_dict = {"role": "assistant", "content": ""}
         if DEBUG_MODE:
             response_dict["content"] += f"💻 **Código ejecutado**:\n```python\n{code}\n```"
