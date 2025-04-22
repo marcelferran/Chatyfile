@@ -111,12 +111,12 @@ if uploaded_file is not None:
     df_w5 = pd.read_csv(uploaded_file)
     st.success("✅ Archivo cargado correctamente.")
 
-    num_rows, num_cols = df.shape
+    num_rows, num_cols = df_w5.shape
     st.write("**Resumen del archivo:**")
     st.write(f"- Número de filas: {num_rows}")
     st.write(f"- Número de columnas: {num_cols}")
     st.write("**Nombres de las columnas:**")
-    st.table(pd.DataFrame(df.columns, columns=["Columnas"]))
+    st.table(pd.DataFrame(df_w5.columns, columns=["Columnas"]))
 
     # Inicializar chat si es la primera vez
     if st.session_state.chat is None:
@@ -125,8 +125,8 @@ if uploaded_file is not None:
             {
                 "role": "user",
                 "parts": [
-                    "Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " 
-                    + ", ".join(df.columns) 
+                    "Tienes un DataFrame de pandas llamado df_w5. Estas son las columnas reales que contiene: " 
+                    + ", ".join(df_w5.columns) 
                     + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."
                 ]
             },
@@ -135,7 +135,7 @@ if uploaded_file is not None:
                 "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
             }
         ])
-        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu df.")
+        st.session_state.history.append("🟢 Asistente activo. Pregunta lo que quieras sobre tu df_w5.")
         st.session_state.history.append("✏️  Escribe 'salir' para terminar.")
 
     # Mostrar historial de chat
@@ -150,18 +150,20 @@ if uploaded_file is not None:
     if submitted and pregunta:
         # Comando de salir
         if pregunta.lower() == "salir":
-            st.session_state.history.append("👋 Adios.")
+            st.session_state.history.append("👋 Programa finalizado.")
             st.session_state.chat = None
             st.rerun()
         else:
             try:
-                # Prompt igual al código original
+                # Línea añadida: búsqueda flexible para productos como 'urea'
+                # Prompt exactamente igual al código CLI original, sin cambiar df a df_w5
                 prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(df.columns)}.
+Tienes un DataFrame de pandas llamado `df_w5` cargado en memoria.
+Estas son las columnas reales: {', '.join(df_w5.columns)}.
 NO CAMBIES los nombres de las columnas.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Para preguntas sobre productos, como 'urea', usa búsquedas flexibles que ignoren mayúsculas/minúsculas (por ejemplo, .str.contains('urea', case=False, na=False)) y consideren variaciones del texto (por ejemplo, 'Urea 46%', 'urea granulada').
 
 Pregunta:
 {pregunta}
@@ -170,7 +172,7 @@ Pregunta:
                 code = response.text.strip("```python\n").strip("```").strip()
 
                 # Ejecutar el código generado
-                exec_globals = {"df": df}
+                exec_globals = {"df_w5": df_w5}
                 buffer = io.StringIO()
 
                 with contextlib.redirect_stdout(buffer):
