@@ -1,5 +1,21 @@
 import streamlit as st
 
+# Función para mostrar el encabezado
+def show_header():
+    st.markdown('<div class="header">', unsafe_allow_html=True)
+    st.image("logo.jpeg", width=400)
+    st.title("📄 Chatyfile")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Función para mostrar el pie de página
+def show_footer():
+    st.markdown("""
+        <div class="footer">
+            <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Función para aplicar los estilos personalizados
 def apply_custom_styles():
     st.markdown("""
         <style>
@@ -18,25 +34,14 @@ def apply_custom_styles():
         </style>
     """, unsafe_allow_html=True)
 
-def show_header():
-    st.markdown('<div class="header">', unsafe_allow_html=True)
-    st.image("logo.jpeg", width=400)
-    st.title("📄 Chatyfile")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-def show_footer():
-    st.markdown("""
-        <div class="footer">
-            <p>© 2025 Chatyfile. Todos los derechos reservados. Propiedad intelectual protegida.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
+# Función para mostrar mensaje de bienvenida
 def show_welcome_message():
     st.markdown("""
         <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
         <p style='text-align: center;'>Sube tu archivo y haz preguntas sobre tus datos</p>
     """, unsafe_allow_html=True)
 
+# Función para el cargador de archivo en el sidebar
 def sidebar_file_uploader():
     with st.sidebar:
         st.header("🤖 DATOS")
