@@ -6,24 +6,24 @@ def show_header():
         """
         <style>
         .header {
-            display: flex;
-            justify-content: flex-end; /* Mueve los elementos al final (derecha) del contenedor */
-            align-items: center; /* Alinea verticalmente los elementos */
+            display: flex; /* Opcional: para alinear el título verticalmente */
+            align-items: center; /* Opcional: para alinear el título verticalmente */
         }
         .header img {
             width: 400px;
-            margin-left: 20px; /* Espacio entre el título y el logo */
+            float: right;
+            margin-left: auto; /* Empuja el logo a la derecha si no hay float */
         }
         .header h1 {
-            margin-right: auto; /* Empuja el título lo más a la izquierda posible */
+            margin-right: 20px; /* Espacio entre el logo y el título */
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
     st.markdown('<div class="header">', unsafe_allow_html=True)
-    st.title("📄 Chatyfile")
     st.image("logo.jpeg", width=400)
+    st.title("📄 Chatyfile")
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == '__main__':
