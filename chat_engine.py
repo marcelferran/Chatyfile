@@ -56,7 +56,7 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, import statements (como import pandas as pd), ni muestres texto explicativo; solo escribe el código Python válido usando pd, plt, np, que ya están disponibles. Usa EXCLUSIVAMENTE 'pd' como el alias para pandas (por ejemplo, pd.DataFrame, pd.Series); no uses otros alias como 'd'. NO definas funciones auxiliares (como def mi_funcion(...)); escribe el código directamente en una sola expresión o bloque.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, import statements (como import pandas as pd), ni muestres texto explicativo; solo escribe el código Python válido usando pd, plt, np, que ya están disponibles. Usa EXCLUSIVAMENTE 'pd' como el alias para pandas (por ejemplo, pd.DataFrame, pd.Series); no uses otros alias como 'd'.
 
 Instrucciones:
 - Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
@@ -65,7 +65,6 @@ Instrucciones:
 - Para búsquedas de texto (por ejemplo, 'urea'), usa .str.contains('texto', case=False, na=False).
 - Para listas de valores únicos (por ejemplo, 'dame los nombres'), usa .unique() y .dropna(), y convierte la lista en una cadena con ', '.join() si es necesario.
 - Para listas con valores asociados (por ejemplo, 'lista de X y su total'), usa .groupby() y .sum() para crear un DataFrame.
-- Para identificar el valor máximo dentro de grupos anidados (por ejemplo, 'qué X generó más Y en cada Z'), usa .groupby(), .sum(), .sort_values(), y .first() para seleccionar el valor máximo por grupo.
 - Para intersecciones (por ejemplo, 'valores en A y B'), usa .isin() y devuelve un DataFrame.
 - Para conteos de múltiples categorías, crea un DataFrame con una columna para la categoría y otra para el total.
 - Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. No modifiques el tamaño de la figura; usa siempre figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan grupos, alinea los datos con reindex si es necesario, rellenando con ceros.
@@ -75,17 +74,15 @@ Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas"
   Código: df.head(5)
 - Pregunta: "Cuántos tipos de Litología hay y dame sus nombres"
-  Código: pd.DataFrame({'Cantidad': [df['Litologia'].nunique()], 'Litologias': [', '.join(df['Litologia'].dropna().unique())]})
+  Código: pd.DataFrame({{'Cantidad': [df['Litologia'].nunique()], 'Litologias': [', '.join(df['Litologia'].dropna().unique())]}})
 - Pregunta: "Cuántos valores únicos hay en la columna X"
-  Código: pd.DataFrame({'Resultado': [df['X'].nunique()]}})
+  Código: pd.DataFrame({{'Resultado': [df['X'].nunique()]}})
 - Pregunta: "Dame una lista de los valores únicos en la columna Y"
-  Código: pd.DataFrame({'Valores': df['Y'].dropna().unique()}})
+  Código: pd.DataFrame({{'Valores': df['Y'].dropna().unique()}})
 - Pregunta: "Cuánto es el total de la columna Z para valores que contengan 'texto' en la columna W"
-  Código: pd.DataFrame({'Resultado': [df[df['W'].str.contains('texto', case=False, na=False)]['Z'].sum()]}})
+  Código: pd.DataFrame({{'Resultado': [df[df['W'].str.contains('texto', case=False, na=False)]['Z'].sum()]}})
 - Pregunta: "Dame una lista de valores en la columna A y su suma de la columna B"
   Código: df.groupby('A')['B'].sum().reset_index(name='Suma Total')
-- Pregunta: "Qué evento generó más NPT en cada pozo"
-  Código: (df.groupby(['Pozo', 'Evento'])['NPT'].sum().reset_index().sort_values(['Pozo', 'NPT'], ascending=[True, False]).groupby('Pozo').first().reset_index())
 - Pregunta: "Gráfico de pastel del top 5 de la columna A por suma de la columna B"
   Código:
     top_5 = df.groupby('A')['B'].sum().nlargest(5)
