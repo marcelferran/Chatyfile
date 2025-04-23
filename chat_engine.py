@@ -1,11 +1,12 @@
 import io
+import ast
 import contextlib
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import google.generativeai as genai
-import numpy as np
-import ast
+
 
 # Función para iniciar el chat
 def iniciar_chat(df):
@@ -56,47 +57,52 @@ Tienes un DataFrame de pandas llamado df cargado en memoria.
 Estas son las columnas reales: {', '.join(df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, import statements (como import pandas as pd), ni muestres texto explicativo; solo escribe el código Python válido usando pd, plt, np, que ya están disponibles. Usa EXCLUSIVAMENTE 'pd' como el alias para pandas (por ejemplo, pd.DataFrame, pd.Series); no uses otros alias como 'd'.
+Responde a esta pregunta escribiendo SOLO el código Python que PRODUCE el resultado final. Para tablas, devuelve un DataFrame. Para gráficos, genera la gráfica con matplotlib y escribe None como la última línea. NO uses print(), return, .tolist(), .values, pandas.plot, import statements (como import pandas as pd), ni muestres texto explicativo; solo escribe el código Python válido usando pd, plt, np, que ya están disponibles.
 
 Instrucciones:
 - Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
-- Para conteos de valores únicos (por ejemplo, 'cuántos tipos'), usa .nunique() y envuelve el resultado en un DataFrame.
-- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame. Usa una columna numérica adecuada según la pregunta.
-- Para búsquedas de texto (por ejemplo, 'urea'), usa .str.contains('texto', case=False, na=False).
-- Para listas de valores únicos (por ejemplo, 'dame los nombres'), usa .unique() y .dropna(), y convierte la lista en una cadena con ', '.join() si es necesario.
-- Para listas con valores asociados (por ejemplo, 'lista de X y su total'), usa .groupby() y .sum() para crear un DataFrame.
-- Para intersecciones (por ejemplo, 'valores en A y B'), usa .isin() y devuelve un DataFrame.
-- Para conteos de múltiples categorías, crea un DataFrame con una columna para la categoría y otra para el total.
-- Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. No modifiques el tamaño de la figura; usa siempre figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan grupos, alinea los datos con reindex si es necesario, rellenando con ceros.
+- Para conteos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y envuelve el resultado en un DataFrame.
+- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame. Usa la columna 'Cantidad' para sumas de compras, a menos que se especifique otra columna.
+- Para búsquedas de productos como 'urea', usa .str.contains('urea', case=False, na=False).
+- Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
+- Para intersecciones (por ejemplo, 'proveedores en Refacciones y Mano de Obra'), usa .isin() y devuelve un DataFrame.
+- Para conteos de múltiples categorías (por ejemplo, 'proveedores de Refacciones y Mano de Obra'), crea un DataFrame con una columna para la categoría y otra para el total.
+- Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. No modifiques el tamaño de la figura; usa siempre figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan años, alinea los datos con reindex para manejar meses faltantes, rellenando con ceros.
+- Usa la columna 'Categoría' para filtros de categorías como 'Refacciones' o 'Mano de Obra'.
+- Usa la columna 'Mes' para agrupaciones mensuales y 'Año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
 
 Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas"
   Código: df.head(5)
-- Pregunta: "Cuántos tipos de Litología hay y dame sus nombres"
-  Código: pd.DataFrame({{'Cantidad': [df['Litologia'].nunique()], 'Litologias': [', '.join(df['Litologia'].dropna().unique())]}})
-- Pregunta: "Cuántos valores únicos hay en la columna X"
-  Código: pd.DataFrame({{'Resultado': [df['X'].nunique()]}})
-- Pregunta: "Dame una lista de los valores únicos en la columna Y"
-  Código: pd.DataFrame({{'Valores': df['Y'].dropna().unique()}})
-- Pregunta: "Cuánto es el total de la columna Z para valores que contengan 'texto' en la columna W"
-  Código: pd.DataFrame({{'Resultado': [df[df['W'].str.contains('texto', case=False, na=False)]['Z'].sum()]}})
-- Pregunta: "Dame una lista de valores en la columna A y su suma de la columna B"
-  Código: df.groupby('A')['B'].sum().reset_index(name='Suma Total')
-- Pregunta: "Gráfico de pastel del top 5 de la columna A por suma de la columna B"
+- Pregunta: "Cuantos proveedores de Urea hay?"
+  Código: pd.DataFrame({{'Resultado': [df[df['Producto'].str.contains('urea', case=False, na=False)]['Proveedor'].nunique()]}})
+- Pregunta: "Cuanto es el total comprado de refacciones 'urea' en 2025"
+  Código: pd.DataFrame({{'Resultado': [df[(df['Producto'].str.contains('urea', case=False, na=False)) & (df['Año'] == 2025)]['Cantidad'].sum()]}})
+- Pregunta: "Cuántos proveedores venden urea, lista y monto comprado"
+  Código: df[df['Producto'].str.contains('urea', case=False, na=False)].groupby('Proveedor')['Cantidad'].sum().reset_index(name='Monto Total')
+- Pregunta: "Proveedores en Refacciones y Mano de Obra"
+  Código: pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Refacciones']['Proveedor'].unique()}}).merge(pd.DataFrame({{'Proveedor': df[df['Categoría'] == 'Mano de Obra']['Proveedor'].unique()}}), on='Proveedor')
+- Pregunta: "Indica cuantos proveedores son de Refacciones y también cuantos de Mano de Obra"
+  Código: pd.DataFrame({{'Categoría': ['Refacciones', 'Mano de Obra'], 'Total Proveedores': [df[df['Categoría'] == 'Refacciones']['Proveedor'].nunique(), df[df['Categoría'] == 'Mano de Obra']['Proveedor'].nunique()]}})
+- Pregunta: "Gráfico de pastel del top 5 de proveedores por ventas totales"
   Código:
-    top_5 = df.groupby('A')['B'].sum().nlargest(5)
+    top_5 = df.groupby('Proveedor')['Cantidad'].sum().nlargest(5)
     plt.figure(figsize=(8, 6), dpi=100)
     plt.pie(top_5, labels=top_5.index, autopct='%1.1f%%')
     None
-- Pregunta: "Gráfica de barras comparando la suma de la columna B por la columna C"
+- Pregunta: "Dame una gráfica de barras diferenciando compras por mes en 2024 y 2025"
   Código:
-    sums = df.groupby('C')['B'].sum()
+    compras_2024 = df[df['Año'] == 2024].groupby('Mes')['Cantidad'].sum().reindex(range(1, 13), fill_value=0)
+    compras_2025 = df[df['Año'] == 2025].groupby('Mes')['Cantidad'].sum().reindex(range(1, 13), fill_value=0)
+    meses = range(1, 13)
     plt.figure(figsize=(8, 6), dpi=100)
-    plt.bar(sums.index, sums)
-    plt.xlabel('C')
-    plt.ylabel('Suma de B')
-    plt.xticks(rotation=45)
+    plt.bar([x - 0.2 for x in meses], compras_2024, width=0.4, label='2024')
+    plt.bar([x + 0.2 for x in meses], compras_2025, width=0.4, label='2025')
+    plt.xlabel('Mes')
+    plt.ylabel('Total Compras')
+    plt.xticks(meses)
+    plt.legend()
     plt.tight_layout()
     None
 
@@ -115,7 +121,7 @@ Pregunta:
         code_lines = [line for line in code.split('\n') if not line.strip().startswith('import')]
         code = '\n'.join(code_lines).strip()
 
-        # Validar que el código sea sintácticamente válido
+        # Validar que el código sea sintáticamente válido
         try:
             ast.parse(code)
         except SyntaxError as e:
@@ -146,7 +152,7 @@ Pregunta:
             return
 
         # Armar la respuesta
-        DEBUG_MODE = True  # Habilitado para depurar el código generado
+        DEBUG_MODE = False  # Habilita para depurar mostrando el codigo generado
         response_dict = {"role": "assistant", "content": ""}
         if DEBUG_MODE:
             response_dict["content"] += f"💻 **Código ejecutado**:\n```python\n{code}\n```"
