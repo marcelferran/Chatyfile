@@ -1,72 +1,55 @@
-import pandas as pd
 import streamlit as st
+from utils import cargar_csv
+from engine import ChatEngine
 from config import configure_genai
-from utils import mostrar_resumen_df
-from chat_engine import iniciar_chat, mostrar_historial, procesar_pregunta
-from layout import apply_custom_styles, show_header, show_welcome_message, sidebar_file_uploader, show_footer
+from layout import apply_custom_styles, show_header, show_footer
 
-# Configuración de la página
-st.set_page_config(
-    page_title="Chatyfile",
-    page_icon="📄",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
 
-# Aplicar estilos y mostrar elementos de diseño
+# Configurar API
+configure_genai()
+
+# Aplicar estilos
 apply_custom_styles()
+
+# Mostrar encabezado
 show_header()
 
-# Contenedor principal para el contenido
-with st.container():
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    show_welcome_message()
-    uploaded_file = sidebar_file_uploader()
+# Sidebar para cargar CSV
+st.sidebar.header("📂 Cargar archivo CSV")
+uploaded_file = st.sidebar.file_uploader("Selecciona un archivo CSV", type=["csv"])
 
-    # Configurar la API de Google Generative AI usando la clave desde secrets
-    try:
-        api_key = st.secrets["GOOGLE_API_KEY"]
-        configure_genai()
-    except KeyError:
-        st.error("No se encontró la clave API en st.secrets. Por favor, configura 'GOOGLE_API_KEY' en los secrets de Streamlit.")
-        st.stop()
+# Área del chat
+if uploaded_file:
+    df = cargar_csv(uploaded_file)
+    if df is not None:
+        chat_engine = ChatEngine(df)
 
-    # Inicializar estado de la sesión
-    if "chat" not in st.session_state:
-        st.session_state.chat = None
-    if "history" not in st.session_state:
-        st.session_state.history = []
+        st.subheader("🤖 Asistente de DataFrame")
 
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-        # Mostrar resumen con estilo
-        st.markdown('<div class="summary-box">', unsafe_allow_html=True)
-        mostrar_resumen_df(df)
-        st.markdown('</div>', unsafe_allow_html=True)
+        chat_placeholder = st.container()
+        input_container = st.container()
 
-        # Iniciar el chat si no ha sido iniciado
-        if st.session_state.chat is None:
-            iniciar_chat(df)
+        if "history" not in st.session_state:
+            st.session_state.history = []
 
-        # Mostrar el historial de la conversación
-        mostrar_historial()
+        with chat_placeholder:
+            for message in st.session_state.history:
+                st.write(message)
 
-        # Formulario para enviar preguntas
-        with st.form(key='pregunta_form', clear_on_submit=True):
-            pregunta = st.text_input("🤖 Pregunta:", key="pregunta_input")
-            submitted = st.form_submit_button(label="Enviar", disabled=False)
+        with input_container:
+            user_input = st.text_input("Escribe tu pregunta aquí...")
 
-        if submitted and pregunta:
-            if pregunta.lower() == "salir":
-                st.session_state.history.append({"role": "system", "content": "👋 Adios."})
-                st.session_state.chat = None
-                st.rerun()
-            else:
-                procesar_pregunta(pregunta, df)
-                st.rerun()
-                
+            if st.button("Enviar"):
+                if user_input.strip() != "":
+                    response = chat_engine.process_question(user_input)
+                    st.session_state.history.append(f"🤔 Tú: {user_input}")
+                    st.session_state.history.append(f"💬 Asistente:\n{response}")
+                    st.experimental_rerun()
+
     else:
-        st.warning("Por favor, sube un archivo para continuar.")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.error("❌ Error al cargar el archivo. Asegúrate que sea un CSV válido.")
+else:
+    st.info("📄 Por favor carga un archivo CSV para comenzar.")
 
+# Mostrar pie de página
 show_footer()
