@@ -23,13 +23,12 @@ class ChatEngine:
     def process_question(self, pregunta):
         try:
             prompt = f"""
-Tienes un DataFrame de pandas llamado `df` cargado en memoria.
+Tienes un DataFrame llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
-
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
-
-Pregunta:
+SIEMPRE que crees un DataFrame nuevo, asígnalo a una variable llamada `result`.
+SIEMPRE que crees un gráfico matplotlib, crea una variable `fig, ax = plt.subplots()` y guarda en `fig`.
+Responde a esta pregunta:
 {pregunta}
 """
             response = self.chat.send_message(prompt)
@@ -42,7 +41,7 @@ Pregunta:
             with contextlib.redirect_stdout(buffer):
                 exec(code, exec_globals)
 
-            # Primero revisar si hay gráfico generado
+            # Revisar si se generó un gráfico
             if plt.get_fignums():
                 fig = plt.gcf()
                 img_buffer = BytesIO()
@@ -51,16 +50,16 @@ Pregunta:
                 plt.close(fig)
                 return {"type": "plot", "content": img_buffer}
 
-            # Revisar si hay resultado tipo tabla
+            # Revisar si se generó un result (DataFrame)
             if "result" in exec_globals and isinstance(exec_globals["result"], pd.DataFrame):
                 return {"type": "dataframe", "content": exec_globals["result"]}
 
-            # Revisar si hay texto
+            # Revisar si hubo impresión de texto
             output = buffer.getvalue()
             if output.strip():
                 return {"type": "text", "content": output.strip()}
 
-            # Si no hay nada
+            # Si no hubo nada
             return {"type": "text", "content": "✅ Código ejecutado sin salida."}
 
         except Exception as e:
