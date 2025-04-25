@@ -48,7 +48,7 @@ if uploaded_file:
                     st.session_state.history.append({"role": "user", "content": user_input})
                     st.session_state.history.append({"role": "assistant", "content": response})
 
-        # Mostrar historial actualizado
+        # Mostrar historial actualizado solo si hay mensajes
         if st.session_state.history:
             with chat_placeholder:
                 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
