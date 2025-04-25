@@ -30,10 +30,19 @@ if uploaded_file:
         if "history" not in st.session_state:
             st.session_state.history = []
 
-        if "rerun_flag" not in st.session_state:
-            st.session_state.rerun_flag = False
-
         chat_placeholder = st.container()
+
+        # Input fijo siempre abajo
+        with st.container():
+            with st.form(key="input_form", clear_on_submit=True):
+                user_input = st.text_input("Escribe tu pregunta aquí...")
+                submitted = st.form_submit_button("Enviar")
+
+                if submitted and user_input.strip() != "":
+                    with st.spinner('Pensando la respuesta...'):
+                        respuesta = chat_engine.process_question(user_input)
+                    st.session_state.history.append({"role": "user", "content": user_input})
+                    st.session_state.history.extend(respuesta)
 
         with chat_placeholder:
             st.markdown('<div class="chat-container">', unsafe_allow_html=True)
@@ -47,25 +56,6 @@ if uploaded_file:
                 elif message["role"] == "assistant" and message.get("type") == "table":
                     st.dataframe(message["content"])
             st.markdown('</div>', unsafe_allow_html=True)
-
-        # Input siempre fijo al fondo
-        with st.container():
-            with st.form(key="input_form", clear_on_submit=True):
-                user_input = st.text_input("Escribe tu pregunta aquí...")
-                submitted = st.form_submit_button("Enviar")
-
-                if submitted and user_input.strip() != "":
-                    with st.spinner('Pensando la respuesta...'):
-                        respuesta = chat_engine.process_question(user_input)
-                    st.session_state.history.append({"role": "user", "content": user_input})
-                    st.session_state.history.extend(respuesta)
-                    st.session_state.rerun_flag = True
-
-        # Rerun limpio fuera del form
-        if st.session_state.rerun_flag:
-            st.session_state.rerun_flag = False
-            st.experimental_rerun()
-            st.stop()  # <<--- ESTO es lo que faltaba para evitar el error
 
     else:
         st.error("Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
