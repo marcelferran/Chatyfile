@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 import google.generativeai as genai
+from io import BytesIO
 
 class ChatEngine:
     def __init__(self, df):
@@ -12,7 +13,7 @@ class ChatEngine:
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.chat = self.model.start_chat(history=[
             {"role": "user", "parts": [
-                "Tienes un DataFrame de pandas llamado df. Estas son las columnas reales: " + ", ".join(df.columns) + ". No cambies los nombres. Usa .str.contains('valor', case=False) para filtros de texto. No uses plotly ni seaborn. Solo pandas, numpy, matplotlib."
+                "Tienes un DataFrame de pandas llamado df. Columnas: " + ", ".join(df.columns) + ". No cambies nombres. Usa .str.contains('valor', case=False) para filtros. No uses plotly ni seaborn. Solo pandas, numpy, matplotlib."
             ]},
             {"role": "model", "parts": ["Entendido."]}
         ])
@@ -21,7 +22,7 @@ class ChatEngine:
         try:
             prompt = f"""
 Tienes un DataFrame llamado df.
-Columnas reales: {', '.join(self.df.columns)}.
+Estas son las columnas reales: {', '.join(self.df.columns)}.
 Responde a esta pregunta escribiendo SOLO el código Python.
 Asigna cualquier resultado tabular a una variable llamada result.
 """
@@ -41,8 +42,11 @@ Asigna cualquier resultado tabular a una variable llamada result.
 
             if plt.get_fignums():
                 fig = plt.gcf()
-                output.append({"role": "assistant", "type": "plot", "content": fig})
-                plt.clf()
+                img_buffer = BytesIO()
+                fig.savefig(img_buffer, format='png', bbox_inches='tight')
+                img_buffer.seek(0)
+                output.append({"role": "assistant", "type": "plot", "content": img_buffer})
+                plt.close(fig)
                 return output
 
             if "result" in exec_globals and isinstance(exec_globals["result"], pd.DataFrame):
