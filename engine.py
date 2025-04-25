@@ -1,8 +1,10 @@
-import google.generativeai as genai
 import io
+import builtins
 import contextlib
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
+import streamlit as st
+import google.generativeai as genai
 
 class ChatEngine:
     def __init__(self, df):
@@ -15,13 +17,13 @@ class ChatEngine:
                     "Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " +
                     ", ".join(df.columns) +
                     ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están. "
-                    "Si haces comparaciones de texto, recuerda usar `.str.lower()` o `case=False` para evitar errores por mayúsculas. "
-                    "No uses librerías externas como plotly o seaborn, solo puedes usar pandas, numpy y matplotlib."
+                    "Cuando filtres por texto (como 'Urea' o 'Motocicletas'), usa `.str.contains('valor', case=False)`. "
+                    "No uses librerías externas como plotly o seaborn, solo pandas, numpy y matplotlib."
                 ]
             },
             {
                 "role": "model",
-                "parts": ["Entendido. Seguiré tus instrucciones y respetaré nombres de columnas."]
+                "parts": ["Entendido. Seguiré tus instrucciones y respetaré nombres de columna."]
             }
         ])
 
@@ -32,22 +34,22 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Si haces filtrados de texto, recuerda usar `.str.lower()` o `case=False`.
-Si haces gráficos, usa matplotlib, no plotly.
+Cuando filtres texto (como 'Urea' o 'Motocicletas'), usa `.str.contains('valor', case=False)`.
+No uses librerías externas como plotly, seaborn. Solo pandas, numpy, matplotlib.
 
-Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+Responde a esta pregunta escribiendo SOLAMENTE el código Python que da la respuesta.
+No expliques nada, solo código.
 
 Pregunta:
 {pregunta}
 """
-
             response = self.chat.send_message(prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
-            # Preparar entorno de ejecución
-            exec_globals = {"df": self.df, "pd": pd, "plt": plt}
-            buffer = io.StringIO()
+            # Preparamos el entorno
+            exec_globals = {"df": self.df, "pd": pd, "plt": plt, "st": st, "builtins": builtins}
 
+            buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 try:
                     exec(code, exec_globals)
@@ -56,20 +58,23 @@ Pregunta:
 
             output = buffer.getvalue()
 
-            # Buscar resultados
-            new_df = exec_globals.get("result", None)
-            if isinstance(new_df, pd.DataFrame):
-                st.dataframe(new_df)
-                return ""
-            elif plt.get_fignums():
+            # Mostrar figura si existe
+            if plt.get_fignums():
                 fig = plt.gcf()
                 st.pyplot(fig)
-                plt.clf()  # Limpiar figura después de mostrar
+                plt.clf()
                 return ""
-            elif output.strip():
+
+            # Mostrar DataFrame si se genera uno llamado 'result'
+            if "result" in exec_globals and isinstance(exec_globals["result"], pd.DataFrame):
+                st.dataframe(exec_globals["result"])
+                return ""
+
+            # Mostrar print capturado si existe
+            if output.strip():
                 return output
-            else:
-                return "✅ Código ejecutado sin salida."
+
+            return "✅ Código ejecutado sin salida."
 
         except Exception as e:
             return f"❌ Error al procesar o ejecutar: {str(e)}"
