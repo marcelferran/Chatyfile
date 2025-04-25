@@ -19,16 +19,18 @@ class ChatEngine:
 
     def process_question(self, pregunta):
         try:
-            prompt = f"""
+            
+           prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
+La columna que contiene los proveedores puede tener mayúsculas o minúsculas.
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 
 Pregunta:
 {pregunta}
-"""
+""" 
             response = self.chat.send_message(prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
