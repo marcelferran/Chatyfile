@@ -39,7 +39,7 @@ if uploaded_file:
                 elif message["role"] == "assistant" and message.get("type") == "text":
                     st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
                 elif message["role"] == "assistant" and message.get("type") == "plot":
-                    st.image(message["content"], use_column_width=True)
+                    st.image(message["content"], use_container_width=True)
                 elif message["role"] == "assistant" and message.get("type") == "table":
                     st.dataframe(message["content"])
             st.markdown('</div>', unsafe_allow_html=True)
@@ -55,6 +55,7 @@ if uploaded_file:
                         respuesta = chat_engine.process_question(user_input)
                     st.session_state.history.append({"role": "user", "content": user_input})
                     st.session_state.history.extend(respuesta)
+                    st.experimental_rerun()
 
     else:
         st.error("Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
