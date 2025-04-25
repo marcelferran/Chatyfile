@@ -13,7 +13,7 @@ class ChatEngine:
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.chat = self.model.start_chat(history=[
             {"role": "user", "parts": [
-                "Tienes un DataFrame de pandas llamado df. Columnas: " + ", ".join(df.columns) + ". No cambies nombres. Usa .str.contains('valor', case=False) para filtros. No uses plotly ni seaborn. Solo pandas, numpy, matplotlib."
+                "Tienes un DataFrame llamado df. Columnas: " + ", ".join(df.columns) + ". No cambies nombres. Usa .str.contains('valor', case=False) para filtros. No uses plotly ni seaborn. Solo pandas, numpy, matplotlib. Siempre asigna cualquier resultado tabular a una variable llamada result."
             ]},
             {"role": "model", "parts": ["Entendido."]}
         ])
@@ -22,9 +22,9 @@ class ChatEngine:
         try:
             prompt = f"""
 Tienes un DataFrame llamado df.
-Estas son las columnas reales: {', '.join(self.df.columns)}.
+Columnas reales: {', '.join(self.df.columns)}.
 Responde a esta pregunta escribiendo SOLO el código Python.
-Asigna cualquier resultado tabular a una variable llamada result.
+Siempre asigna cualquier resultado tabular a una variable llamada result.
 """
             response = self.chat.send_message(prompt + "\n\nPregunta:\n" + pregunta)
             code = response.text.strip("`python\n").strip("`").strip()
