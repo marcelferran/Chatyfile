@@ -3,7 +3,7 @@ import pandas as pd
 from engine import ChatEngine
 from layout import apply_custom_styles, show_header, show_footer
 
-# Configurar página
+# Configuración de la página
 st.set_page_config(page_title="Chatyfile", page_icon="📄", layout="wide")
 
 # Aplicar estilos
@@ -12,7 +12,7 @@ apply_custom_styles()
 # Mostrar encabezado
 show_header()
 
-# Inicializar variables de sesión
+# Variables de sesión
 if "history" not in st.session_state:
     st.session_state.history = []
 if "chat_engine" not in st.session_state:
@@ -30,7 +30,7 @@ if uploaded_file:
 if st.session_state.chat_engine is None:
     st.info("📂 Por favor carga un archivo CSV para comenzar.")
 else:
-    # Mostrar chat
+    # Mostrar historial de conversación
     chat_placeholder = st.container()
 
     with chat_placeholder:
@@ -38,15 +38,16 @@ else:
         for message in st.session_state.history:
             if message["role"] == "user":
                 st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
-            elif message["role"] == "assistant" and message.get("type") == "text":
-                st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
-            elif message["role"] == "assistant" and message.get("type") == "dataframe":
-                st.dataframe(message["content"])
-            elif message["role"] == "assistant" and message.get("type") == "plot":
-                st.image(message["content"], use_container_width=True)
+            elif message["role"] == "assistant":
+                if message["type"] == "text":
+                    st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
+                elif message["type"] == "dataframe":
+                    st.dataframe(message["content"])
+                elif message["type"] == "plot":
+                    st.image(message["content"], use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Input fijo al fondo
+    # Formulario de input
     with st.form(key="input_form", clear_on_submit=True):
         user_input = st.text_input("Escribe tu pregunta aquí...")
         submitted = st.form_submit_button("Enviar")
@@ -57,7 +58,4 @@ else:
 
             # Guardar historial
             st.session_state.history.append({"role": "user", "content": user_input})
-            st.session_state.history.append(respuesta)
-
-# Mostrar pie de página
-show_footer()
+            st.session_state.history.append({"role": "assistant", "type": respuesta["type"], "content": respuesta["content"]})
