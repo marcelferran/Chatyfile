@@ -51,7 +51,8 @@ if uploaded_file:
                     response = chat_engine.process_question(user_input)
                     st.session_state.history.append({"role": "user", "content": user_input})
                     st.session_state.history.append({"role": "assistant", "content": response})
-                    st.experimental_rerun()
+                    # No hacemos st.experimental_rerun() aquí
+                    # El form ya actualiza automáticamente
 
     else:
         st.error("❌ Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
