@@ -40,7 +40,6 @@ if uploaded_file:
                 submitted = st.form_submit_button("Enviar")
 
                 if submitted and user_input.strip() != "":
-                    # Mostrar spinner mientras se procesa
                     with st.spinner('⏳ Pensando la respuesta...'):
                         response = chat_engine.process_question(user_input)
 
