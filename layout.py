@@ -89,9 +89,26 @@ def apply_custom_styles():
             .stFileUploader label {
                 color: #0077b5;
                 font-weight: bold;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+
+            st.markdown("""
+                <style>
+                    /* Botón de carga de archivo personalizado */
+                    .stFileUploader {
+                        border: 2px dashed #0077b5;
+                        padding: 1rem;
+                        border-radius: 10px;
+                        background-color: #e6f0f8;
+                        text-align: center;
+                        color: #0077b5;
+                        font-weight: 600;
+                        font-size: 1rem;
+                    }
+                    .stFileUploader:hover {
+                        background-color: #d0e7f5;
+                        color: #005f8d;
+                    }
+                </style>
+            """, unsafe_allow_html=True)
 
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
