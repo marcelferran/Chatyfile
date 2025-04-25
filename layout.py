@@ -99,6 +99,16 @@ def apply_custom_styles():
                 background-color: #d0e7f5;
                 color: #005f8d;
             }
+
+        <style>
+            input[type="text"] {
+                background-color: white !important;
+                color: #1f2937 !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px;
+                padding: 0.5em;
+                box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+            }
         </style>
     """, unsafe_allow_html=True)
 
