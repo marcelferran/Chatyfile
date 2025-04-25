@@ -29,7 +29,6 @@ if uploaded_file:
         if "history" not in st.session_state:
             st.session_state.history = []
 
-        # Contenedor del chat
         chat_placeholder = st.container()
 
         with chat_placeholder:
@@ -40,12 +39,12 @@ if uploaded_file:
                 elif message["role"] == "assistant" and message.get("type") == "text":
                     st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
                 elif message["role"] == "assistant" and message.get("type") == "plot":
-                    st.pyplot(message["content"])
+                    st.image(message["content"], use_column_width=True)
                 elif message["role"] == "assistant" and message.get("type") == "table":
                     st.dataframe(message["content"])
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Contenedor del input fijo abajo
+        # Input siempre fijo al fondo
         with st.container():
             with st.form(key="input_form", clear_on_submit=True):
                 user_input = st.text_input("Escribe tu pregunta aquí...")
