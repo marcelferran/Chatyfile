@@ -29,8 +29,8 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-La columna que contiene los proveedores puede tener valores con diferentes mayúsculas o minúsculas.
-Usa código robusto y que funcione correctamente con esos casos.
+Si la pregunta implica filtrar por texto, recuerda que puede haber variaciones de mayúsculas y minúsculas como 'Urea', 'urea', 'UREA'.
+Usa comparaciones robustas como `.str.lower()` o `case=False` en `.str.contains()`.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 
@@ -41,7 +41,6 @@ Pregunta:
             response = self.chat.send_message(prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
-            # Ejecutar el código generado por Gemini
             exec_globals = {"df": self.df}
             buffer = io.StringIO()
 
