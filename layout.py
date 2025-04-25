@@ -95,8 +95,8 @@ def apply_custom_styles():
 
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
-    st.image("logotipo.jpeg", width=200)
-    st.title("Chatyfile 📄🔵")
+    st.image("logo.jpeg", width=500)
+    st.title("Chatyfile")
     st.caption("Tu asistente de análisis de datos en archivos CSV")
     st.markdown('</div>', unsafe_allow_html=True)
 
