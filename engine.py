@@ -9,7 +9,12 @@ class ChatEngine:
         self.chat = self.model.start_chat(history=[
             {
                 "role": "user",
-                "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]
+                "parts": [
+                    "Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " +
+                    ", ".join(df.columns) +
+                    ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están. "
+                    "Si vas a hacer comparaciones de texto, recuerda que pueden contener mayúsculas y minúsculas diferentes."
+                ]
             },
             {
                 "role": "model",
@@ -19,22 +24,24 @@ class ChatEngine:
 
     def process_question(self, pregunta):
         try:
-            
-           prompt = f"""
+            prompt = f"""
 Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-La columna que contiene los proveedores puede tener mayúsculas o minúsculas.
+La columna que contiene los proveedores puede tener valores con diferentes mayúsculas o minúsculas.
+Usa código robusto y que funcione correctamente con esos casos.
+
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 
 Pregunta:
 {pregunta}
-""" 
+"""
+
             response = self.chat.send_message(prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
-            # Ejecutar el código generado
+            # Ejecutar el código generado por Gemini
             exec_globals = {"df": self.df}
             buffer = io.StringIO()
 
@@ -50,6 +57,6 @@ Pregunta:
                 return output
             else:
                 return "✅ Código ejecutado sin salida."
-        
+
         except Exception as e:
             return f"❌ Error al procesar o ejecutar: {str(e)}"
