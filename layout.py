@@ -3,14 +3,12 @@ import streamlit as st
 def apply_custom_styles():
     st.markdown("""
         <style>
-            /* Fondo general */
             .stApp {
                 background-color: #f1f5f9;
                 color: #1f2937;
                 font-family: 'Inter', 'Segoe UI', sans-serif;
             }
 
-            /* Header */
             .header {
                 text-align: center;
                 margin-bottom: 20px;
@@ -21,22 +19,22 @@ def apply_custom_styles():
                 margin-bottom: 10px;
             }
 
-            /* Contenedor del chat */
             .chat-container {
                 background-color: #ffffff;
                 border: 1px solid #e2e8f0;
                 border-radius: 12px;
                 padding: 20px;
-                height: 400px;
+                max-height: 400px;
                 overflow-y: auto;
                 margin-bottom: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
             }
 
-            /* Mensajes */
             .chat-message {
                 padding: 10px;
                 border-radius: 10px;
-                margin-bottom: 10px;
                 max-width: 80%;
                 word-wrap: break-word;
             }
@@ -55,13 +53,11 @@ def apply_custom_styles():
                 margin-right: auto;
             }
 
-            /* Input abajo */
             .input-container {
                 background-color: #f1f5f9;
                 padding-top: 10px;
             }
 
-            /* Footer */
             .footer {
                 text-align: center;
                 margin-top: 30px;
@@ -69,7 +65,6 @@ def apply_custom_styles():
                 color: #64748b;
             }
 
-            /* Botón de enviar */
             .stButton > button {
                 background-color: #0077b5;
                 color: white;
@@ -79,12 +74,12 @@ def apply_custom_styles():
                 font-size: 1rem;
                 transition: 0.3s;
             }
+
             .stButton > button:hover {
                 background-color: #005f8d;
                 color: white;
             }
 
-            /* Botón de carga de archivo moderno */
             .stFileUploader {
                 border: 2px dashed #0077b5;
                 padding: 1rem;
@@ -95,12 +90,12 @@ def apply_custom_styles():
                 font-weight: 600;
                 font-size: 1rem;
             }
+
             .stFileUploader:hover {
                 background-color: #d0e7f5;
                 color: #005f8d;
             }
 
-        <style>
             input[type="text"] {
                 background-color: white !important;
                 color: #1f2937 !important;
@@ -115,7 +110,7 @@ def apply_custom_styles():
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
     st.image("logo.jpeg", width=500)
-    st.title("Chatyfile")
+    st.title("Chatyfile 📄🔵")
     st.caption("Tu asistente de análisis de datos CSV, rápido y sencillo.")
     st.markdown('</div>', unsafe_allow_html=True)
 
