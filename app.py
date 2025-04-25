@@ -28,14 +28,26 @@ if uploaded_file:
         chat_placeholder = st.container()
         input_container = st.container()
 
-        # Inicializar historial en session_state
+        # Inicializar historial si no existe
         if "history" not in st.session_state:
             st.session_state.history = []
 
-        if "pending_user_input" not in st.session_state:
-            st.session_state.pending_user_input = None
+        # Input y envío
+        with input_container:
+            with st.form(key="input_form", clear_on_submit=True):
+                user_input = st.text_input("Escribe tu pregunta aquí...")
 
-        # Mostrar historial anterior
+                submitted = st.form_submit_button("Enviar")
+
+                if submitted and user_input.strip() != "":
+                    # Procesar pregunta inmediatamente aquí mismo
+                    response = chat_engine.process_question(user_input)
+
+                    # Guardar pregunta y respuesta
+                    st.session_state.history.append({"role": "user", "content": user_input})
+                    st.session_state.history.append({"role": "assistant", "content": response})
+
+        # Mostrar historial actualizado
         with chat_placeholder:
             st.markdown('<div class="chat-container">', unsafe_allow_html=True)
             for message in st.session_state.history:
@@ -44,31 +56,6 @@ if uploaded_file:
                 else:
                     st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
-
-        # Formulario para nueva pregunta
-        with input_container:
-            with st.form(key="input_form", clear_on_submit=True):
-                user_input = st.text_input("Escribe tu pregunta aquí...")
-                submitted = st.form_submit_button("Enviar")
-
-                if submitted and user_input.strip() != "":
-                    # Guardar pregunta pendiente en session_state
-                    st.session_state.pending_user_input = user_input
-
-        # Procesar fuera del form
-        if st.session_state.pending_user_input:
-            pregunta = st.session_state.pending_user_input
-            respuesta = chat_engine.process_question(pregunta)
-
-            # Guardar en historial
-            st.session_state.history.append({"role": "user", "content": pregunta})
-            st.session_state.history.append({"role": "assistant", "content": respuesta})
-
-            # Limpiar input pendiente
-            st.session_state.pending_user_input = None
-
-            # Recargar para mostrar nueva respuesta
-            st.experimental_rerun()
 
     else:
         st.error("❌ Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
