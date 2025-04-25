@@ -3,7 +3,7 @@ import pandas as pd
 from engine import ChatEngine
 from layout import apply_custom_styles, show_header, show_footer
 
-# Configuración de la página
+# Configurar la página
 st.set_page_config(page_title="Chatyfile", page_icon="📄", layout="wide")
 
 # Aplicar estilos
@@ -12,7 +12,7 @@ apply_custom_styles()
 # Mostrar encabezado
 show_header()
 
-# Variables de sesión
+# Inicializar sesión
 if "history" not in st.session_state:
     st.session_state.history = []
 if "chat_engine" not in st.session_state:
@@ -30,7 +30,7 @@ if uploaded_file:
 if st.session_state.chat_engine is None:
     st.info("📂 Por favor carga un archivo CSV para comenzar.")
 else:
-    # Mostrar historial de conversación
+    # Historial
     chat_placeholder = st.container()
 
     with chat_placeholder:
@@ -47,7 +47,7 @@ else:
                     st.image(message["content"], use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Formulario de input
+    # Input
     with st.form(key="input_form", clear_on_submit=True):
         user_input = st.text_input("Escribe tu pregunta aquí...")
         submitted = st.form_submit_button("Enviar")
@@ -56,6 +56,8 @@ else:
             with st.spinner('⏳ Pensando la respuesta...'):
                 respuesta = st.session_state.chat_engine.process_question(user_input)
 
-            # Guardar historial
             st.session_state.history.append({"role": "user", "content": user_input})
             st.session_state.history.append({"role": "assistant", "type": respuesta["type"], "content": respuesta["content"]})
+
+# Footer
+show_footer()
