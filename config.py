@@ -6,5 +6,5 @@ def configure_genai():
         api_key = st.secrets["GOOGLE_API_KEY"]
         genai.configure(api_key=api_key)
     except KeyError:
-        st.error("❌ No se encontró la clave API en los Secrets de Streamlit.")
+        st.error("❌ No se encontró GOOGLE_API_KEY en los Secrets de Streamlit.")
         st.stop()
