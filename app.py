@@ -59,12 +59,13 @@ if uploaded_file:
                         respuesta = chat_engine.process_question(user_input)
                     st.session_state.history.append({"role": "user", "content": user_input})
                     st.session_state.history.extend(respuesta)
-                    st.session_state.rerun_flag = True  # Activamos bandera de rerun
+                    st.session_state.rerun_flag = True
 
         # Rerun limpio fuera del form
         if st.session_state.rerun_flag:
-            st.session_state.rerun_flag = False  # Quitamos bandera
+            st.session_state.rerun_flag = False
             st.experimental_rerun()
+            st.stop()  # <<--- ESTO es lo que faltaba para evitar el error
 
     else:
         st.error("Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
