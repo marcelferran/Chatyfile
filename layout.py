@@ -16,7 +16,6 @@ def apply_custom_styles():
                 margin-bottom: 20px;
             }
 
-            /* Imagen */
             .header img {
                 border-radius: 12px;
                 margin-bottom: 10px;
@@ -33,7 +32,7 @@ def apply_custom_styles():
                 margin-bottom: 10px;
             }
 
-            /* Mensajes de chat */
+            /* Mensajes */
             .chat-message {
                 padding: 10px;
                 border-radius: 10px;
@@ -56,7 +55,7 @@ def apply_custom_styles():
                 margin-right: auto;
             }
 
-            /* Contenedor input pregunta */
+            /* Input abajo */
             .input-container {
                 background-color: #f1f5f9;
                 padding-top: 10px;
@@ -70,7 +69,7 @@ def apply_custom_styles():
                 color: #64748b;
             }
 
-            /* Botón bonito */
+            /* Botón de enviar */
             .stButton > button {
                 background-color: #0077b5;
                 color: white;
@@ -85,36 +84,29 @@ def apply_custom_styles():
                 color: white;
             }
 
-            /* Archivo uploader personalizado */
-            .stFileUploader label {
+            /* Botón de carga de archivo moderno */
+            .stFileUploader {
+                border: 2px dashed #0077b5;
+                padding: 1rem;
+                border-radius: 10px;
+                background-color: #e6f0f8;
+                text-align: center;
                 color: #0077b5;
-                font-weight: bold;
-
-            st.markdown("""
-                <style>
-                    /* Botón de carga de archivo personalizado */
-                    .stFileUploader {
-                        border: 2px dashed #0077b5;
-                        padding: 1rem;
-                        border-radius: 10px;
-                        background-color: #e6f0f8;
-                        text-align: center;
-                        color: #0077b5;
-                        font-weight: 600;
-                        font-size: 1rem;
-                    }
-                    .stFileUploader:hover {
-                        background-color: #d0e7f5;
-                        color: #005f8d;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
+                font-weight: 600;
+                font-size: 1rem;
+            }
+            .stFileUploader:hover {
+                background-color: #d0e7f5;
+                color: #005f8d;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
 def show_header():
     st.markdown('<div class="header">', unsafe_allow_html=True)
     st.image("logo.jpeg", width=500)
     st.title("Chatyfile")
-    st.caption("Tu asistente de análisis de datos en archivos CSV")
+    st.caption("Tu asistente de análisis de datos CSV, rápido y sencillo.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 def show_footer():
