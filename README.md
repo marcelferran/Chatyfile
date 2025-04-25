@@ -4,7 +4,6 @@ Chatyfile es un asistente inteligente que te ayuda a interactuar con archivos CS
 Basado en Gemini 2.0 Flash de Google y construido con Streamlit, permite hacer preguntas sobre tus datos, obtener respuestas, filtrar información y generar gráficos automáticamente.
 
 Características
-
 *Carga de archivos CSV de manera sencilla.
 
 *Asistente de datos usando Gemini 2.0 Flash.
@@ -21,9 +20,13 @@ Características
 
 Tecnologías utilizadas
 *Python 3.9+
+
 *Streamlit 1.38.0+
+
 *Google Generative AI (google-generativeai)
+
 *Pandas
+
 *Matplotlib
 
 Instalación local
