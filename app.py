@@ -8,7 +8,7 @@ st.set_page_config(page_title="Chatyfile", page_icon="🤖", layout="wide")
 # Aplicar estilos de diseño personalizados (definidos en layout.py si corresponde)
 try:
     import layout
-    layout.apply_styles()  # Supongamos que layout.py define esta función para aplicar CSS
+    layout.apply_custom_styles()  # Supongamos que layout.py define esta función para aplicar CSS
 except ImportError:
     pass
 
