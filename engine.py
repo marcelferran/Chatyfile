@@ -1,0 +1,48 @@
+import io
+import contextlib
+import pandas as pd
+import google.generativeai as genai
+
+
+class ChatEngine:
+    def __init__(self, df):
+        self.df = df
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.chat = self.model.start_chat(history=[
+            {"role": "user", "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]},
+            {"role": "model", "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]}
+        ])
+        
+
+    def process_question(self, question):
+        prompt = f"""
+Tienes un DataFrame de pandas llamado `df` cargado en memoria.
+Estas son las columnas reales: {', '.join(self.df.columns)}.
+NO CAMBIES los nombres de las columnas.
+
+Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
+
+Pregunta:
+{question}
+"""
+        try:
+            response = self.chat.send_message(prompt)
+            code = response.text.strip("`python\n").strip("`").strip()
+
+            exec_globals = {"df": self.df}
+            buffer = io.StringIO()
+
+            with contextlib.redirect_stdout(buffer):
+                try:
+                    exec(code, exec_globals)
+                except Exception as e:
+                    return f"❌ Error al ejecutar el código: {str(e)}"
+
+            output = buffer.getvalue()
+
+            if output.strip():
+                return output
+            else:
+                return "✅ Código ejecutado sin salida."
+        except Exception as e:
+            return f"❌ Error al procesar o ejecutar: {str(e)}"
