@@ -3,7 +3,7 @@ import pandas as pd
 from engine import ChatEngine
 from layout import apply_custom_styles, show_header, show_footer
 
-# Configurar la página
+# Configurar página
 st.set_page_config(page_title="Chatyfile", page_icon="📄", layout="wide")
 
 # Aplicar estilos
@@ -25,12 +25,13 @@ uploaded_file = st.sidebar.file_uploader("Selecciona un archivo CSV", type=["csv
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
     st.session_state.chat_engine = ChatEngine(df)
+    st.session_state.history = []  # Limpiar historial cuando se sube nuevo archivo
     st.success(f"✅ Archivo '{uploaded_file.name}' cargado correctamente.")
 
 if st.session_state.chat_engine is None:
     st.info("📂 Por favor carga un archivo CSV para comenzar.")
 else:
-    # Historial
+    # Mostrar historial
     chat_placeholder = st.container()
 
     with chat_placeholder:
@@ -47,7 +48,7 @@ else:
                     st.image(message["content"], use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Input
+    # Input para preguntas
     with st.form(key="input_form", clear_on_submit=True):
         user_input = st.text_input("Escribe tu pregunta aquí...")
         submitted = st.form_submit_button("Enviar")
@@ -59,5 +60,5 @@ else:
             st.session_state.history.append({"role": "user", "content": user_input})
             st.session_state.history.append({"role": "assistant", "type": respuesta["type"], "content": respuesta["content"]})
 
-# Footer
+# Mostrar pie de página
 show_footer()
