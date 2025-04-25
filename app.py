@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from config import configure_genai
 from layout import apply_custom_styles, show_header, show_footer
@@ -29,6 +30,9 @@ if uploaded_file:
         if "history" not in st.session_state:
             st.session_state.history = []
 
+        if "rerun_flag" not in st.session_state:
+            st.session_state.rerun_flag = False
+
         chat_placeholder = st.container()
 
         with chat_placeholder:
@@ -55,7 +59,12 @@ if uploaded_file:
                         respuesta = chat_engine.process_question(user_input)
                     st.session_state.history.append({"role": "user", "content": user_input})
                     st.session_state.history.extend(respuesta)
-                    st.experimental_rerun()
+                    st.session_state.rerun_flag = True  # Activamos bandera de rerun
+
+        # Rerun limpio fuera del form
+        if st.session_state.rerun_flag:
+            st.session_state.rerun_flag = False  # Quitamos bandera
+            st.experimental_rerun()
 
     else:
         st.error("Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
