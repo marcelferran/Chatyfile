@@ -15,7 +15,7 @@ apply_custom_styles()
 show_header()
 
 # Sidebar para cargar CSV
-st.sidebar.header("Cargar archivo CSV 📂")
+st.sidebar.header("📊 Cargar archivo CSV")
 uploaded_file = st.sidebar.file_uploader("Selecciona un archivo CSV", type=["csv"])
 
 # Área de interacción
