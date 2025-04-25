@@ -49,9 +49,11 @@ if uploaded_file:
                     st.session_state.history.append({"role": "assistant", "content": response})
 
         # Mostrar historial actualizado
-        with chat_placeholder:
-            st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-            for message in st.session_state.history:
+
+        if st.session_state.history:
+            with chat_placeholder:
+                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+                for message in st.session_state.history:
                 if message["role"] == "user":
                     st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
                 else:
