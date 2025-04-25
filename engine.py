@@ -12,23 +12,27 @@ class ChatEngine:
         self.chat = self.model.start_chat(history=[
             {
                 "role": "user",
-                "parts": ["Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " + ", ".join(df.columns) + ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están."]
+                "parts": [
+                    "Tienes un DataFrame llamado df. Estas son sus columnas: " + ", ".join(df.columns) + 
+                    ". No traduzcas ni modifiques los nombres. Usa pandas y matplotlib solamente."
+                ]
             },
             {
                 "role": "model",
-                "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
+                "parts": ["Entendido. Usaré pandas y matplotlib respetando los nombres de columnas."]
             }
         ])
 
     def process_question(self, pregunta):
         try:
             prompt = f"""
-Tienes un DataFrame llamado `df` cargado en memoria.
-Estas son las columnas reales: {', '.join(self.df.columns)}.
-NO CAMBIES los nombres de las columnas.
-SIEMPRE que crees un DataFrame nuevo, asígnalo a una variable llamada `result`.
-SIEMPRE que crees un gráfico matplotlib, crea una variable `fig, ax = plt.subplots()` y guarda en `fig`.
-Responde a esta pregunta:
+Tienes un DataFrame de pandas llamado `df`.
+Estas son las columnas: {', '.join(self.df.columns)}.
+No cambies los nombres de columnas.
+Si haces un cálculo o selección de datos, asigna el resultado a una variable llamada `result`.
+Si haces una gráfica, usa matplotlib, crea una figura `fig, ax = plt.subplots()`.
+Devuelve solo el código Python que ejecuta la respuesta.
+Pregunta:
 {pregunta}
 """
             response = self.chat.send_message(prompt)
@@ -41,7 +45,7 @@ Responde a esta pregunta:
             with contextlib.redirect_stdout(buffer):
                 exec(code, exec_globals)
 
-            # Revisar si se generó un gráfico
+            # Revisar si hay figura
             if plt.get_fignums():
                 fig = plt.gcf()
                 img_buffer = BytesIO()
@@ -50,16 +54,15 @@ Responde a esta pregunta:
                 plt.close(fig)
                 return {"type": "plot", "content": img_buffer}
 
-            # Revisar si se generó un result (DataFrame)
+            # Revisar si hay resultado tabular
             if "result" in exec_globals and isinstance(exec_globals["result"], pd.DataFrame):
                 return {"type": "dataframe", "content": exec_globals["result"]}
 
-            # Revisar si hubo impresión de texto
+            # Revisar si hay texto impreso
             output = buffer.getvalue()
             if output.strip():
                 return {"type": "text", "content": output.strip()}
 
-            # Si no hubo nada
             return {"type": "text", "content": "✅ Código ejecutado sin salida."}
 
         except Exception as e:
