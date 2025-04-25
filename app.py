@@ -5,10 +5,10 @@ from engine import process_question
 # Configuración de la página
 st.set_page_config(page_title="Chatyfile", page_icon="🤖", layout="wide")
 
-# Aplicar estilos de diseño personalizados (definidos en layout.py si corresponde)
+# Aplicar estilos de diseño personalizados (definidos en layout.py)
 try:
     import layout
-    layout.apply_custom_styles()  # Supongamos que layout.py define esta función para aplicar CSS
+    layout.apply_custom_styles()
 except ImportError:
     pass
 
