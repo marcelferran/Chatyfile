@@ -49,16 +49,15 @@ if uploaded_file:
                     st.session_state.history.append({"role": "assistant", "content": response})
 
         # Mostrar historial actualizado
-
         if st.session_state.history:
             with chat_placeholder:
                 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
                 for message in st.session_state.history:
-                if message["role"] == "user":
-                    st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+                    if message["role"] == "user":
+                        st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div class="chat-message assistant-message">{message["content"]}</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
     else:
         st.error("❌ Error al cargar el archivo. Asegúrate de que sea un CSV válido.")
