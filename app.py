@@ -40,8 +40,9 @@ if uploaded_file:
                 submitted = st.form_submit_button("Enviar")
 
                 if submitted and user_input.strip() != "":
-                    # Procesar pregunta inmediatamente aquí mismo
-                    response = chat_engine.process_question(user_input)
+                    # Mostrar spinner mientras se procesa
+                    with st.spinner('⏳ Pensando la respuesta...'):
+                        response = chat_engine.process_question(user_input)
 
                     # Guardar pregunta y respuesta
                     st.session_state.history.append({"role": "user", "content": user_input})
