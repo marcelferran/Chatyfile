@@ -1,6 +1,8 @@
 import google.generativeai as genai
 import io
 import contextlib
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class ChatEngine:
     def __init__(self, df):
@@ -13,12 +15,13 @@ class ChatEngine:
                     "Tienes un DataFrame de pandas llamado df. Estas son las columnas reales que contiene: " +
                     ", ".join(df.columns) +
                     ". No traduzcas ni cambies ningún nombre de columna. Usa los nombres tal como están. "
-                    "Si vas a hacer comparaciones de texto, recuerda que pueden contener mayúsculas y minúsculas diferentes."
+                    "Si haces comparaciones de texto, recuerda usar `.str.lower()` o `case=False` para evitar errores por mayúsculas. "
+                    "No uses librerías externas como plotly o seaborn, solo puedes usar pandas, numpy y matplotlib."
                 ]
             },
             {
                 "role": "model",
-                "parts": ["Entendido. Usaré los nombres de columna exactamente como los proporcionaste."]
+                "parts": ["Entendido. Seguiré tus instrucciones y respetaré nombres de columnas."]
             }
         ])
 
@@ -29,8 +32,8 @@ Tienes un DataFrame de pandas llamado `df` cargado en memoria.
 Estas son las columnas reales: {', '.join(self.df.columns)}.
 NO CAMBIES los nombres de las columnas.
 
-Si la pregunta implica filtrar por texto, recuerda que puede haber variaciones de mayúsculas y minúsculas como 'Urea', 'urea', 'UREA'.
-Usa comparaciones robustas como `.str.lower()` o `case=False` en `.str.contains()`.
+Si haces filtrados de texto, recuerda usar `.str.lower()` o `case=False`.
+Si haces gráficos, usa matplotlib, no plotly.
 
 Responde a esta pregunta escribiendo solamente el código Python que da la respuesta.
 
@@ -41,7 +44,8 @@ Pregunta:
             response = self.chat.send_message(prompt)
             code = response.text.strip("`python\n").strip("`").strip()
 
-            exec_globals = {"df": self.df}
+            # Preparar entorno de ejecución
+            exec_globals = {"df": self.df, "pd": pd, "plt": plt}
             buffer = io.StringIO()
 
             with contextlib.redirect_stdout(buffer):
@@ -52,7 +56,17 @@ Pregunta:
 
             output = buffer.getvalue()
 
-            if output.strip():
+            # Buscar resultados
+            new_df = exec_globals.get("result", None)
+            if isinstance(new_df, pd.DataFrame):
+                st.dataframe(new_df)
+                return ""
+            elif plt.get_fignums():
+                fig = plt.gcf()
+                st.pyplot(fig)
+                plt.clf()  # Limpiar figura después de mostrar
+                return ""
+            elif output.strip():
                 return output
             else:
                 return "✅ Código ejecutado sin salida."
