@@ -234,4 +234,3 @@ def display_sidebar_notes():
     st.sidebar.markdown("3. Configura tu clave de API de Gemini (`GEMINI_API_KEY`) como variable de entorno o en `st.secrets.toml`.")
     st.sidebar.markdown("4. Ejecuta la aplicación desde tu terminal: `streamlit run app.py`")
     st.sidebar.markdown("5. Abre la URL que aparece en tu terminal.")
-
