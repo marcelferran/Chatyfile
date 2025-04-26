@@ -15,37 +15,49 @@ class ChatEngine:
         Initializes the ChatEngine with the dataframe and configures Gemini.
         """
         self.dataframe = dataframe
+        # Initialize self.chat to None by default
+        self.chat = None
         self._configure_gemini()
-        self._initialize_chat()
+        self._initialize_chat() # Call initialization after configuration
 
     def _configure_gemini(self):
         """Configures the Gemini API with the retrieved key."""
         api_key = get_gemini_api_key()
         if not api_key:
              # get_gemini_api_key already handles st.error and st.stop
-             # but adding a check here ensures self.chat is not initialized with a bad key
+             # If key is missing, the app should stop, but we set self.chat to None defensively
              self.chat = None
              return
-        genai.configure(api_key=api_key)
+        try:
+            genai.configure(api_key=api_key)
+            # If configuration is successful, self.chat remains None for now,
+            # it will be initialized in _initialize_chat
+        except Exception as e:
+            print(f"Error configuring Gemini API: {e}") # Print to console for debugging
+            st.error(f"Error al configurar la API de Gemini: {e}")
+            self.chat = None # Ensure chat is None if configuration fails
 
 
     def _initialize_chat(self):
         """
         Initializes the Gemini chat object.
-        Resets the chat history when a new engine is created (new file uploaded).
+        Ensures self.chat is assigned a value (chat object or None).
         """
-        if self.chat is not None: # Avoid re-initializing if key was missing
+        # Remove the problematic check 'if self.chat is not None:'
+        # Always attempt to initialize the chat model
+        if genai.get_client(): # Check if genai is configured
             try:
                 model = genai.GenerativeModel(MODEL_NAME)
-                # Start a new chat session, history is managed in Streamlit's session_state
-                # The model's internal history is reset here.
+                # Start a new chat session. The model's internal history is reset here.
                 self.chat = model.start_chat(history=[])
             except Exception as e:
-                # Log the error and set chat to None
-                print(f"Error initializing Gemini model: {e}") # Print to console for debugging
-                st.error(f"Error al inicializar el modelo Gemini: {e}")
-                self.chat = None # Ensure chat is None if model loading fails
-                # st.stop() # Avoid stopping here, let the app continue with an error message
+                # Catch any errors during model loading or chat start
+                print(f"Error initializing Gemini model or chat: {e}") # Print to console for debugging
+                st.error(f"Error al inicializar el modelo Gemini o el chat: {e}")
+                self.chat = None # Ensure chat is None if initialization fails
+        else:
+            # genai was not configured, likely due to missing API key
+            self.chat = None
 
 
     def process_question(self, user_query: str):
@@ -53,6 +65,7 @@ class ChatEngine:
         Processes the user's question using the Gemini model and the loaded dataframe.
         Returns a structured response (list of dictionaries) for display.
         """
+        # Robustly check if the chat object is available before using it
         if self.dataframe is None or self.chat is None:
             return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible. Por favor, sube un archivo CSV y asegúrate de que la clave API sea válida."}]
 
