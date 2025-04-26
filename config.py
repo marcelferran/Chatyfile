@@ -19,3 +19,4 @@ def get_gemini_api_key():
             st.markdown("Por favor, añade tu clave de API de Gemini como variable de entorno `GEMINI_API_KEY` o en los secretos de Streamlit Cloud (`st.secrets`).")
             st.stop() # Detiene la ejecución si no hay clave
     return api_key
+
