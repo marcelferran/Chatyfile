@@ -34,7 +34,7 @@ class ChatEngine:
             # This call configures the API internally.
             # If api_key is None or invalid, configure might raise an error depending on the library version.
             genai.configure(api_key=api_key)
-            # If configure is successful, the API is ready for use.
+            # If configuration is successful, the API is ready for use.
             # self.chat will be initialized in _initialize_chat.
         except Exception as e:
             print(f"Error configuring Gemini API: {e}") # Print to console for debugging
@@ -55,6 +55,7 @@ class ChatEngine:
             model = genai.GenerativeModel(MODEL_NAME)
             # Start a new chat session. The model's internal history is reset here.
             self.chat = model.start_chat(history=[])
+            st.write("DEBUG: Chat object initialized successfully.") # Debug line
         except Exception as e:
             # Catch any errors during model loading or chat start
             print(f"Error initializing Gemini model or chat: {e}") # Print to console for debugging
@@ -67,9 +68,12 @@ class ChatEngine:
         Processes the user's question using the Gemini model and the loaded dataframe.
         Returns a structured response (list of dictionaries) for display.
         """
+        st.write("DEBUG: process_question called.") # Debug line
+
         # Robustly check if the chat object is available before using it
         if self.dataframe is None or self.chat is None:
-            return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible. Por favor, sube un archivo CSV y asegúrate de que la clave API sea válida y el modelo se inicialice correctamente."}]
+             st.write("DEBUG: Dataframe or chat is None.") # Debug line
+             return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible. Por favor, sube un archivo CSV y asegúrate de que la clave API sea válida y el modelo se inicialice correctamente."}]
 
         # Prepare the prompt for the model
         # Include information about the dataframe (columns, types, sample rows)
@@ -109,20 +113,34 @@ class ChatEngine:
 
         prompt = f"{instructions}\n\nDatos del CSV:\n{df_info}\n\nPregunta del usuario: {user_query}"
 
+        st.write("DEBUG: Prompt preparado.") # Debug line
+        st.write(f"DEBUG: Prompt: {prompt[:500]}...") # Debug line (show first 500 chars)
+
+
         # Call the Gemini model with error handling
         try:
+            st.write("DEBUG: Calling self.chat.send_message...") # Debug line
             # Send the message to the chat session
             response = self.chat.send_message(prompt)
-            raw_response_text = response.text
+            st.write("DEBUG: Received response from send_message.") # Debug line
 
+            raw_response_text = response.text
+            st.write(f"DEBUG: Raw response text: {raw_response_text[:500]}...") # Debug line (show first 500 chars)
+
+            st.write("DEBUG: Calling parse_gemini_response...") # Debug line
             # Parse the raw response text into structured elements
             structured_response = parse_gemini_response(raw_response_text, self.dataframe) # Pass dataframe for validation
+            st.write("DEBUG: parse_gemini_response finished.") # Debug line
+            st.write("DEBUG: Structured response:") # Debug line
+            st.write(structured_response) # Debug line
 
             return structured_response
 
         except Exception as e:
             # Catch any errors during the API call or initial response processing
             print(f"Error during Gemini API call or response processing: {e}") # Print to console for debugging
+            st.error(f"Error al procesar tu solicitud: {e}. Por favor, intenta de nuevo.") # Display error in Streamlit
+            st.write(f"DEBUG: Exception caught in process_question: {e}") # Debug line
             # Return a structured error message
             return [{"type": "text", "content": f"Lo siento, hubo un error al procesar tu solicitud: {e}. Por favor, intenta de nuevo."}]
 
