@@ -18,9 +18,10 @@ class ChatEngine:
         # Initialize self.chat to None by default
         self.chat = None
         self._configure_gemini()
-        # Call initialization only if configuration was successful (api_key was found)
-        if genai.api_key: # Check if the API key is set after configuration
-             self._initialize_chat() # Call initialization after configuration
+        # Call initialization only if genai.configure was successful and api_key is set
+        # We can check if genai.api_key is set after configure is called.
+        if genai.api_key is not None:
+             self._initialize_chat() # Call initialization after successful configuration
 
 
     def _configure_gemini(self):
@@ -34,7 +35,7 @@ class ChatEngine:
              return
         try:
             genai.configure(api_key=api_key)
-            # If configuration is successful, genai.api_key is set.
+            # If configuration is successful, genai.api_key is set internally.
             # self.chat will be initialized in _initialize_chat if genai.api_key is not None.
         except Exception as e:
             print(f"Error configuring Gemini API: {e}") # Print to console for debugging
@@ -49,8 +50,13 @@ class ChatEngine:
         Ensures self.chat is assigned a value (chat object or None).
         This function is only called if genai.api_key is set.
         """
-        # Removed the problematic check 'if genai.get_client():'
-        # If we reach here, genai.api_key should be set.
+        # If we reach here, genai.api_key should be set by _configure_gemini
+        if genai.api_key is None:
+             # This case should ideally not happen if called from __init__
+             # after checking genai.api_key, but adding defensively.
+             self.chat = None
+             return
+
         try:
             model = genai.GenerativeModel(MODEL_NAME)
             # Start a new chat session. The model's internal history is reset here.
