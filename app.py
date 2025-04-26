@@ -59,15 +59,7 @@ def mostrar_historial():
             content_elements = mensaje.get("content", [])
             if not isinstance(content_elements, list):
                  # If somehow content is not a list (e.g., old format), wrap it
-                 # This part might not be needed if parse_gemini_response always returns a list
                  content_elements = [{"type": mensaje.get("type", "text"), "content": content_elements}]
-
-            # --- DEBUGGING OUTPUT ---
-            # Keep debug lines here to see what's in the history
-            if role == "assistant":
-                 st.write(f"DEBUG: Mensaje Asistente {i}:")
-                 st.write(content_elements)
-            # --- END DEBUGGING OUTPUT ---
 
 
             # Display content based on type
@@ -85,6 +77,7 @@ def mostrar_historial():
                     element_content = element.get("content", "")
 
                     if element_type == "text":
+                         # Display text within the assistant message bubble
                          st.markdown(f'<div class="chat-message assistant-message">{element_content}</div>', unsafe_allow_html=True)
                     elif element_type == "dataframe":
                          # Display dataframe outside the custom message div for better rendering
@@ -158,7 +151,7 @@ if st.session_state.chat_engine is not None:
         st.session_state.history.append({"role": "assistant", "content": respuesta_estructurada}) # Store as a list of elements
 
         # Rerun the app to display the updated history
-        # st.rerun() # COMMENTED OUT TEMPORARILY FOR DEBUGGING
+        st.rerun() # UNCOMMENTED to refresh the UI
 
 else:
     # Display message if no file is loaded
