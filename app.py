@@ -19,11 +19,7 @@ if "history" not in st.session_state:
 if "chat_engine" not in st.session_state:
     st.session_state.chat_engine = None
 # Initialize chat object from engine if not exists
-if 'chat' not in st.session_state or st.session_state['chat'] is None:
-     # ChatEngine will handle the initialization of the Gemini chat object internally
-     # We don't need a separate 'chat' key in session_state here anymore,
-     # as it's managed by the ChatEngine instance.
-     pass # ChatEngine will be created upon file upload
+# The ChatEngine class now handles the Gemini chat object internally
 
 # --- Sidebar for CSV Upload ---
 st.sidebar.header("📂 Cargar archivo CSV")
@@ -41,8 +37,7 @@ if uploaded_file:
         if not st.session_state.history:
              st.session_state.history.append({
                  "role": "assistant",
-                 "type": "text",
-                 "content": "¡Hola! He cargado tu archivo CSV. ¿En qué puedo ayudarte hoy?"
+                 "content": [{"type": "text", "content": "¡Hola! He cargado tu archivo CSV. ¿En qué puedo ayudarte hoy?"}] # Welcome message as a list of elements
              })
     except Exception as e:
         st.error(f"Error al leer el archivo CSV: {e}")
@@ -58,25 +53,36 @@ def mostrar_historial():
     with chat_placeholder:
         # Use the custom chat-container div
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for mensaje in st.session_state.history:
+        for i, mensaje in enumerate(st.session_state.history):
             role = mensaje["role"]
             # Ensure 'content' is a list of elements, even if it's just one text element
             content_elements = mensaje.get("content", [])
             if not isinstance(content_elements, list):
                  # If somehow content is not a list (e.g., old format), wrap it
+                 # This part might not be needed if parse_gemini_response always returns a list
                  content_elements = [{"type": mensaje.get("type", "text"), "content": content_elements}]
+
+            # --- DEBUGGING OUTPUT ---
+            if role == "assistant":
+                 st.write(f"DEBUG: Mensaje Asistente {i}:")
+                 st.write(content_elements)
+            # --- END DEBUGGING OUTPUT ---
 
 
             # Display content based on type
             # Note: We are now iterating through elements within a message
-            for element in content_elements:
-                element_type = element.get("type", "text")
-                element_content = element.get("content", "")
+            # User messages are simple text, Assistant messages can be structured
+            if role == "user":
+                 # User messages are always text in this structure
+                 # Assuming the content for user is a single text string
+                 user_text_content = content_elements[0].get("content", "") if content_elements else ""
+                 st.markdown(f'<div class="chat-message user-message">{user_text_content}</div>', unsafe_allow_html=True)
+            elif role == "assistant":
+                 # Assistant messages can contain multiple elements (text, table, plot)
+                 for element in content_elements:
+                    element_type = element.get("type", "text")
+                    element_content = element.get("content", "")
 
-                if role == "user":
-                     # User messages are always text in this structure
-                     st.markdown(f'<div class="chat-message user-message">{element_content}</div>', unsafe_allow_html=True)
-                elif role == "assistant":
                     if element_type == "text":
                          st.markdown(f'<div class="chat-message assistant-message">{element_content}</div>', unsafe_allow_html=True)
                     elif element_type == "dataframe":
@@ -87,9 +93,8 @@ def mostrar_historial():
                          st.markdown('</div>', unsafe_allow_html=True)
                     elif element_type == "plot":
                          # Assuming 'content' for plot is a dictionary with plot specs
-                         # You might need to adjust this based on how your engine generates plots
+                         # We need the original dataframe to generate the plot here
                          try:
-                             # We need the original dataframe to generate the plot here
                              current_df = st.session_state.get('chat_engine').dataframe if st.session_state.get('chat_engine') else None
                              if current_df is not None:
                                  plot_data = element_content['data']
@@ -97,6 +102,8 @@ def mostrar_historial():
 
                                  # Check if columns exist before plotting
                                  if plot_data['x'] in current_df.columns and plot_data['y'] in current_df.columns:
+                                     # Add some spacing before the chart
+                                     st.markdown('<div style="margin-top: 10px; margin-bottom: 10px;">', unsafe_allow_html=True)
                                      if plot_type == 'bar':
                                          st.bar_chart(current_df.set_index(plot_data['x'])[plot_data['y']])
                                      elif plot_type == 'line':
@@ -106,6 +113,7 @@ def mostrar_historial():
                                           st.line_chart(current_df.set_index(plot_data['x'])[plot_data['y']])
                                      else:
                                          st.warning(f"Tipo de gráfico no soportado para mostrar: {plot_type}")
+                                     st.markdown('</div>', unsafe_allow_html=True)
                                  else:
                                      st.warning(f"Columnas '{plot_data['x']}' o '{plot_data['y']}' no encontradas en los datos para mostrar el gráfico.")
                              else:
@@ -135,7 +143,9 @@ if st.session_state.chat_engine is not None:
 
     if submitted and user_input.strip() != "":
         # Add user query to history immediately
-        st.session_state.history.append({"role": "user", "content": user_input})
+        # Store user message as a list of text elements for consistency
+        st.session_state.history.append({"role": "user", "content": [{"type": "text", "content": user_input}]})
+
 
         with st.spinner('⏳ Pensando la respuesta...'):
             # Process the question using the ChatEngine
