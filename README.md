@@ -1,57 +1,58 @@
 # CSV Chat App
 
-This is a Streamlit application that allows you to upload a CSV file and chat with your data using the Gemini 2.0 Flash model.
+Esta es una aplicación Streamlit que te permite subir un archivo CSV y chatear con tus datos usando el modelo Gemini 2.0 Flash.
 
-## Files
+## Archivos
 
-- `app.py`: The main application file that orchestrates the different components.
-- `engine.py`: Handles the interaction with the Gemini API and model.
-- `utils.py`: Contains utility functions, such as processing the model's response.
-- `layout.py`: Defines the Streamlit UI elements and layout.
-- `config.py`: Stores configuration variables and handles API key retrieval.
-- `requirements.txt`: Lists the necessary Python packages.
-- `readme.md`: This file.
+- `app.py`: El archivo principal de la aplicación que orquesta los diferentes componentes.
+- `engine.py`: Maneja la interacción con la API y el modelo de Gemini.
+- `utils.py`: Contiene funciones de utilidad, como el procesamiento de la respuesta del modelo.
+- `layout.py`: Define los elementos de la interfaz de usuario y el diseño de Streamlit.
+- `config.py`: Almacena variables de configuración y maneja la obtención de la clave API.
+- `requirements.txt`: Lista los paquetes de Python necesarios.
+- `readme.md`: Este archivo.
 
-## Setup
+## Configuración
 
-1.  **Clone the repository** (or create these files manually).
-2.  **Install dependencies:**
+1.  **Clona el repositorio** (o crea estos archivos manualmente).
+2.  **Instala las dependencias:**
     ```bash
     pip install -r requirements.txt
     ```
-3.  **Get a Gemini API Key:**
-    - Go to [Google AI Studio](https://makersuite.google.com/).
-    - Create an API key.
-4.  **Configure your API Key:**
-    - **Option 1 (Environment Variable):** Set the `GEMINI_API_KEY` environment variable with your API key.
+    **Nota:** La librería `tabulate` es necesaria para mostrar vistas previas de los datos.
+3.  **Obtén una clave de API de Gemini:**
+    - Ve a [Google AI Studio](https://makersuite.google.com/).
+    - Crea una clave API.
+4.  **Configura tu clave de API:**
+    - **Opción 1 (Variable de Entorno):** Configura la variable de entorno `GEMINI_API_KEY` con tu clave API.
       ```bash
-      export GEMINI_API_KEY='YOUR_API_KEY'
+      export GEMINI_API_KEY='TU_CLAVE_API'
       ```
-      (Replace `YOUR_API_KEY` with your actual key)
-    - **Option 2 (Streamlit Cloud Secrets):** If deploying to Streamlit Cloud, create a `.streamlit` folder and inside it, a `secrets.toml` file. Add your API key like this:
+      (Reemplaza `TU_CLAVE_API` con tu clave real)
+    - **Opción 2 (Secretos de Streamlit Cloud):** Si vas a desplegar en Streamlit Cloud, crea una carpeta `.streamlit` y dentro de ella, un archivo `secrets.toml`. Añade tu clave API así:
       ```toml
-      GEMINI_API_KEY="YOUR_API_KEY"
+      GEMINI_API_KEY="TU_CLAVE_API"
       ```
-      (Replace `YOUR_API_KEY` with your actual key)
+      (Reemplaza `TU_CLAVE_API` con tu clave real)
 
-## Running the Application
+## Ejecutar la Aplicación
 
-1.  Open your terminal in the directory where the files are saved.
-2.  Run the Streamlit application:
+1.  Abre tu terminal en el directorio donde están guardados los archivos.
+2.  Ejecuta la aplicación Streamlit:
     ```bash
     streamlit run app.py
     ```
-3.  Your web browser will open with the application.
+3.  Tu navegador web se abrirá con la aplicación.
 
-## Usage
+## Uso
 
-1.  Upload your CSV file using the file uploader.
-2.  Once the file is loaded, a preview will be shown.
-3.  Use the chat input box at the bottom to ask questions about your data.
-4.  The AI will respond with text, tables, or basic charts based on the data.
+1.  Sube tu archivo CSV usando el cargador de archivos.
+2.  Una vez que el archivo esté cargado, se mostrará una vista previa.
+3.  Usa el cuadro de entrada del chat en la parte inferior para hacer preguntas sobre tus datos.
+4.  La IA responderá con texto, tablas o gráficos básicos basados en los datos.
 
-## Extending
+## Extensión
 
-- You can modify `layout.py` to change the application's appearance.
-- Enhance `utils.py` to handle more complex response formats or generate different types of charts (e.g., using Altair or Plotly).
-- Refine the instructions in `app.py` (or move them to a separate file) to guide the AI's responses more effectively.
+- Puedes modificar `layout.py` para cambiar la apariencia de la aplicación.
+- Mejora `utils.py` para manejar formatos de respuesta más complejos o generar diferentes tipos de gráficos (por ejemplo, usando Altair o Plotly).
+- Refina las instrucciones en `app.py` (o muévelas a un archivo separado) para guiar las respuestas de la IA de manera más efectiva.
