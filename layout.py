@@ -3,121 +3,154 @@ import pandas as pd
 from utils import display_chat_elements # Import the display function
 
 def setup_page_config():
-    """Sets up the basic Streamlit page configuration."""
+    """Sets up the basic Streamlit page configuration and injects custom CSS."""
     st.set_page_config(page_title="Chat con tu CSV", layout="wide")
 
     # Inject custom CSS for styling
-    # Note: Centering the main content area precisely can be tricky with Streamlit's default structure.
-    # This CSS targets the main block container and attempts to apply styling.
-    # The background color and link color (for accents like the file uploader) are set here.
+    # Targeting Streamlit's internal classes for layout and styling.
+    # Note: These class names might change in future Streamlit versions.
     st.markdown("""
         <style>
-        /* General body styling */
+        /* General body and app container styling */
         body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Modern font */
             background-color: #f0f2f6; /* Light gray background */
             color: #333; /* Default text color */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-        }
-
-        /* Main content container styling */
-        .stApp > header {
-             background-color: transparent; /* Make header background transparent */
         }
 
         .stApp {
             background-color: #f0f2f6; /* Ensure app background is light gray */
         }
 
-        .stApp > div:first-child {
-            /* This targets the main block container where content is added */
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+        /* Header styling */
+        .stApp > header {
+             background-color: transparent; /* Make header background transparent */
+             color: #0077b5; /* LinkedIn Blue for header text */
+             padding: 1rem;
         }
 
-        /* Attempt to center the main content and limit its width */
-        /* This requires targeting Streamlit's internal classes, which can be fragile */
-        .st-emotion-cache-1cypcdb { /* Example class for the main block container - may change with Streamlit updates */
-            max-width: 800px; /* Limit width */
+        /* Main content container styling */
+        /* This targets the primary block container where most content resides */
+        .st-emotion-cache-1cypcdb { /* This class name is an example and might need verification */
+            max-width: 800px; /* Limit width for centering */
             margin-left: auto;
             margin-right: auto;
             background-color: #ffffff; /* White background for the content area */
             padding: 2rem;
-            border-radius: 0.5rem;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            margin-top: 2rem; /* Add some space from the top */
+            margin-bottom: 2rem; /* Add some space at the bottom */
+        }
+
+        /* Specific styling for the file uploader button */
+        /* Targeting the button-like part of the file uploader */
+        .st-emotion-cache-19rxjxo.ef3psqc11 > div > button { /* Example selector - may change */
+            background-color: #0077b5; /* LinkedIn Blue */
+            color: white;
+            border-radius: 8px; /* Rounded corners */
+            padding: 0.75rem 1.5rem; /* More padding */
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            border: none; /* Remove default border */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Styling for the file uploader button */
-        .st-emotion-cache-19rxjxo.ef3psqc11 { /* Example class for the file uploader button - may change */
-            background-color: #0077b5; /* LinkedIn Blue */
-            color: white;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .st-emotion-cache-19rxjxo.ef3psqc11:hover {
+        .st-emotion-cache-19rxjxo.ef3psqc11 > div > button:hover {
             background-color: #005582; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
         }
 
-        /* Styling for Streamlit buttons in general for a modern look */
+         /* Styling for general Streamlit buttons */
         .stButton>button {
             background-color: #0077b5; /* LinkedIn Blue */
             color: white;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
+            border-radius: 8px; /* Rounded corners */
+            padding: 0.75rem 1.5rem; /* More padding */
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.1s ease;
             border: none; /* Remove default border */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .stButton>button:hover {
             background-color: #005582; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
         }
+
 
         /* Styling for chat messages */
         .stChatMessage {
             background-color: #e9ecef; /* Light gray for messages */
-            border-radius: 0.5rem;
+            border-radius: 10px; /* Rounded corners */
             padding: 1rem;
             margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow */
         }
+
+        .stChatMessage[data-testid="stChatMessage"][data-message-role="user"] {
+             background-color: #cfe2ff; /* Light blue for user messages */
+             text-align: right; /* Align user text to the right */
+             border-bottom-right-radius: 2px; /* Tail effect */
+        }
+
+         .stChatMessage[data-testid="stChatMessage"][data-message-role="assistant"] {
+             background-color: #e9ecef; /* Light gray for assistant messages */
+             text-align: left; /* Align assistant text to the left */
+             border-bottom-left-radius: 2px; /* Tail effect */
+        }
+
 
         .stChatMessage>.stMarkdown {
             color: #333; /* Text color within messages */
         }
 
-        /* Styling for tables */
-        .dataframe {
+        /* Styling for tables within messages */
+        .stChatMessage .dataframe {
             border-collapse: collapse;
             width: 100%;
             margin: 1rem 0;
             font-size: 0.9rem;
+            border-radius: 8px; /* Rounded corners for table */
+            overflow: hidden; /* Ensures corners are rounded */
         }
 
-        .dataframe th, .dataframe td {
+        .stChatMessage .dataframe th, .stChatMessage .dataframe td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
 
-        .dataframe th {
+        .stChatMessage .dataframe th {
             background-color: #0077b5; /* LinkedIn Blue */
             color: white;
+            font-weight: bold;
         }
 
-        .dataframe tr:nth-child(even){background-color: #f2f2f2;}
+        .stChatMessage .dataframe tr:nth-child(even){background-color: #f2f2f2;}
 
         /* Styling for chat input */
         .st-emotion-cache-1cypcdb .stTextInput > div > div > input {
-             border-radius: 0.5rem;
+             border-radius: 8px; /* Rounded corners */
              border: 1px solid #ced4da;
              padding: 0.75rem 1rem;
+             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+             transition: border-color 0.2s ease;
+        }
+
+        .st-emotion-cache-1cypcdb .stTextInput > div > div > input:focus {
+             border-color: #0077b5; /* LinkedIn Blue on focus */
+             outline: none; /* Remove default outline */
+             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 0.2rem rgba(0, 119, 181, 0.25);
+        }
+
+        /* Adjust chat input container padding */
+        .st-emotion-cache-1cypcdb .st-emotion-cache-1gh52kc { /* Example class for chat input container */
+            padding-bottom: 1rem; /* Add padding below the input */
         }
 
 
@@ -186,3 +219,4 @@ def display_sidebar_notes():
     st.sidebar.markdown("3. Configura tu clave de API de Gemini (`GEMINI_API_KEY`) como variable de entorno o en `st.secrets.toml`.")
     st.sidebar.markdown("4. Ejecuta la aplicación desde tu terminal: `streamlit run app.py`")
     st.sidebar.markdown("5. Abre la URL que aparece en tu terminal.")
+
