@@ -4,7 +4,7 @@ import pandas as pd
 from layout import setup_page_config, apply_custom_styles, show_header, show_footer
 # Import our engine and utils
 from engine import ChatEngine
-from utils import parse_gemini_response, display_message_content # Import utility functions
+from utils import parse_gemini_response # Import only necessary utility functions
 
 # --- Application Setup ---
 setup_page_config() # Set page config using layout function
@@ -60,26 +60,60 @@ def mostrar_historial():
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
         for mensaje in st.session_state.history:
             role = mensaje["role"]
-            content_type = mensaje.get("type", "text") # Default to text if type is missing
-            content = mensaje["content"]
+            # Ensure 'content' is a list of elements, even if it's just one text element
+            content_elements = mensaje.get("content", [])
+            if not isinstance(content_elements, list):
+                 # If somehow content is not a list (e.g., old format), wrap it
+                 content_elements = [{"type": mensaje.get("type", "text"), "content": content_elements}]
 
-            # Use custom chat-message divs based on role
-            message_class = "user-message" if role == "user" else "assistant-message"
 
             # Display content based on type
-            if content_type == "text":
-                 st.markdown(f'<div class="chat-message {message_class}">{content}</div>', unsafe_allow_html=True)
-            elif content_type == "dataframe":
-                 # Display dataframe outside the custom message div for better rendering
-                 st.dataframe(content)
-            elif content_type == "plot":
-                 # Assuming 'content' for plot is image data or path
-                 # You might need to adjust this based on how your engine generates plots
-                 try:
-                     st.image(content, use_container_width=True)
-                 except Exception as e:
-                     st.warning(f"No se pudo mostrar el gráfico: {e}")
-                     st.markdown(f'<div class="chat-message assistant-message">No se pudo mostrar el gráfico.</div>', unsafe_allow_html=True)
+            # Note: We are now iterating through elements within a message
+            for element in content_elements:
+                element_type = element.get("type", "text")
+                element_content = element.get("content", "")
+
+                if role == "user":
+                     # User messages are always text in this structure
+                     st.markdown(f'<div class="chat-message user-message">{element_content}</div>', unsafe_allow_html=True)
+                elif role == "assistant":
+                    if element_type == "text":
+                         st.markdown(f'<div class="chat-message assistant-message">{element_content}</div>', unsafe_allow_html=True)
+                    elif element_type == "dataframe":
+                         # Display dataframe outside the custom message div for better rendering
+                         # Add some spacing before the dataframe
+                         st.markdown('<div style="margin-top: 10px; margin-bottom: 10px;">', unsafe_allow_html=True)
+                         st.dataframe(element_content)
+                         st.markdown('</div>', unsafe_allow_html=True)
+                    elif element_type == "plot":
+                         # Assuming 'content' for plot is a dictionary with plot specs
+                         # You might need to adjust this based on how your engine generates plots
+                         try:
+                             # We need the original dataframe to generate the plot here
+                             current_df = st.session_state.get('chat_engine').dataframe if st.session_state.get('chat_engine') else None
+                             if current_df is not None:
+                                 plot_data = element_content['data']
+                                 plot_type = element_content['type']
+
+                                 # Check if columns exist before plotting
+                                 if plot_data['x'] in current_df.columns and plot_data['y'] in current_df.columns:
+                                     if plot_type == 'bar':
+                                         st.bar_chart(current_df.set_index(plot_data['x'])[plot_data['y']])
+                                     elif plot_type == 'line':
+                                         st.line_chart(current_df.set_index(plot_data['x'])[plot_data['y']])
+                                     elif plot_type == 'scatter':
+                                          # Simple fallback for scatter
+                                          st.line_chart(current_df.set_index(plot_data['x'])[plot_data['y']])
+                                     else:
+                                         st.warning(f"Tipo de gráfico no soportado para mostrar: {plot_type}")
+                                 else:
+                                     st.warning(f"Columnas '{plot_data['x']}' o '{plot_data['y']}' no encontradas en los datos para mostrar el gráfico.")
+                             else:
+                                  st.warning("No hay datos disponibles para mostrar el gráfico.")
+                         except Exception as e:
+                             st.warning(f"No se pudo mostrar el gráfico: {e}")
+                             st.markdown(f'<div class="chat-message assistant-message">No se pudo mostrar el gráfico debido a un error.</div>', unsafe_allow_html=True)
+
 
         st.markdown('</div>', unsafe_allow_html=True) # Close chat-container div
 
@@ -121,4 +155,3 @@ else:
 
 # --- Footer ---
 show_footer() # Display footer using layout function
-
