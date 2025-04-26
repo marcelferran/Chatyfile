@@ -7,11 +7,17 @@ def setup_page_config():
     st.set_page_config(page_title="Chat con tu CSV", layout="wide")
 
     # Inject custom CSS for styling
-    # IMPORTANT: Streamlit's internal class names can change.
-    # If the styling doesn't apply, use your browser's developer tools (F12)
-    # to inspect the elements you want to style (like the main content block,
-    # the file uploader button, chat messages, etc.) and find their current
-    # CSS class names. Replace the example class names below with the actual ones.
+    # IMPORTANT: Streamlit's internal class names can change frequently.
+    # If the styling doesn't apply as expected, you MUST use your browser's
+    # developer tools (F12) to inspect the HTML elements on your running
+    # Streamlit app. Find the exact CSS class names for:
+    # 1. The main content block (the white box in the middle).
+    # 2. The file uploader button.
+    # 3. The chat messages (user and assistant).
+    # 4. The chat input box.
+    # Then, REPLACE the example class names in the CSS selectors below
+    # (like '.css-1cypcdb', '.css-19rxjxo.ef3psqc11 > div > button', etc.)
+    # with the actual class names you find.
 
     st.markdown("""
         <style>
@@ -35,8 +41,8 @@ def setup_page_config():
 
         /* Main content container styling */
         /* This targets the primary block container where most content resides */
-        /* REPLACE '.st-emotion-cache-1cypcdb' with the actual class name found via F12 if needed */
-        .css-1cypcdb { /* Adjusted example class name */
+        /* *** REPLACE '.css-1cypcdb' BELOW with the actual class name for the main content block *** */
+        .css-1cypcdb { /* EXAMPLE CLASS NAME - FIND THE REAL ONE WITH F12 */
             max-width: 800px; /* Limit width for centering */
             margin-left: auto;
             margin-right: auto;
@@ -50,8 +56,8 @@ def setup_page_config():
 
         /* Specific styling for the file uploader button */
         /* Targeting the button-like part of the file uploader */
-        /* REPLACE '.st-emotion-cache-19rxjxo.ef3psqc11 > div > button' with the actual selector found via F12 if needed */
-        .css-19rxjxo.ef3psqc11 > div > button { /* Adjusted example selector */
+        /* *** REPLACE '.css-19rxjxo.ef3psqc11 > div > button' BELOW with the actual selector for the file uploader button *** */
+        .css-19rxjxo.ef3psqc11 > div > button { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 */
             background-color: #0077b5; /* LinkedIn Blue */
             color: white;
             border-radius: 8px; /* Rounded corners */
@@ -90,7 +96,8 @@ def setup_page_config():
 
 
         /* Styling for chat messages */
-        .stChatMessage {
+        /* The data-testid selector is more stable, but check if .stChatMessage itself is correct */
+        .stChatMessage { /* Check if this base class is correct */
             background-color: #e9ecef; /* Light gray for messages */
             border-radius: 10px; /* Rounded corners */
             padding: 1rem;
@@ -140,8 +147,8 @@ def setup_page_config():
         .stChatMessage .dataframe tr:nth-child(even){background-color: #f2f2f2;}
 
         /* Styling for chat input */
-        /* REPLACE '.st-emotion-cache-1cypcdb .stTextInput > div > div > input' with the actual selector if needed */
-        .css-1cypcdb .stTextInput > div > div > input { /* Adjusted example selector */
+        /* *** REPLACE '.css-1cypcdb .stTextInput > div > div > input' BELOW with the actual selector for the chat input *** */
+        .css-1cypcdb .stTextInput > div > div > input { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 */
              border-radius: 8px; /* Rounded corners */
              border: 1px solid #ced4da;
              padding: 0.75rem 1rem;
@@ -156,8 +163,8 @@ def setup_page_config():
         }
 
         /* Adjust chat input container padding */
-        /* REPLACE '.st-emotion-cache-1cypcdb .st-emotion-cache-1gh52kc' with the actual selector if needed */
-        .css-1cypcdb .css-1gh52kc { /* Adjusted example class for chat input container */
+        /* *** REPLACE '.css-1cypcdb .css-1gh52kc' BELOW with the actual selector for the chat input container if needed *** */
+        .css-1cypcdb .css-1gh52kc { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 */
             padding-bottom: 1rem; /* Add padding below the input */
         }
 
