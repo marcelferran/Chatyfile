@@ -17,46 +17,40 @@ class ChatEngine:
         self.dataframe = dataframe
         # Initialize self.chat to None by default
         self.chat = None
+        # Configure Gemini API - this will get the key and set it internally if successful
         self._configure_gemini()
-        # Call initialization only if genai.configure was successful and api_key is set
-        # We can check if genai.api_key is set after configure is called.
-        if genai.api_key is not None:
-             self._initialize_chat() # Call initialization after successful configuration
+        # Always attempt to initialize the chat after configuration
+        # The _initialize_chat method will handle potential errors if configuration failed
+        self._initialize_chat()
 
 
     def _configure_gemini(self):
         """Configures the Gemini API with the retrieved key."""
         api_key = get_gemini_api_key()
-        if not api_key:
-             # get_gemini_api_key already handles st.error and st.stop
-             # If key is missing, the app should stop, but we set genai.api_key to None defensively
-             genai.api_key = None # Set the global API key to None if not found
-             self.chat = None # Ensure chat is None
-             return
+        # get_gemini_api_key already handles st.error and st.stop if the key is missing.
+        # If the app continues past get_gemini_api_key, we assume the key was found
+        # or handled appropriately by config.py.
         try:
+            # This call configures the API internally.
+            # If api_key is None or invalid, configure might raise an error depending on the library version.
             genai.configure(api_key=api_key)
-            # If configuration is successful, genai.api_key is set internally.
-            # self.chat will be initialized in _initialize_chat if genai.api_key is not None.
+            # If configure is successful, the API is ready for use.
+            # self.chat will be initialized in _initialize_chat.
         except Exception as e:
             print(f"Error configuring Gemini API: {e}") # Print to console for debugging
             st.error(f"Error al configurar la API de Gemini: {e}")
-            genai.api_key = None # Ensure global API key is None on error
-            self.chat = None # Ensure chat is None if configuration fails
+            # If configuration fails, self.chat remains None, which is handled in process_question.
+            self.chat = None # Ensure chat is None on configuration failure
 
 
     def _initialize_chat(self):
         """
         Initializes the Gemini chat object.
         Ensures self.chat is assigned a value (chat object or None).
-        This function is only called if genai.api_key is set.
+        This method is called after _configure_gemini.
         """
-        # If we reach here, genai.api_key should be set by _configure_gemini
-        if genai.api_key is None:
-             # This case should ideally not happen if called from __init__
-             # after checking genai.api_key, but adding defensively.
-             self.chat = None
-             return
-
+        # Attempt to initialize the model and chat.
+        # If genai.configure failed, this might also fail, and the exception is caught.
         try:
             model = genai.GenerativeModel(MODEL_NAME)
             # Start a new chat session. The model's internal history is reset here.
@@ -75,7 +69,7 @@ class ChatEngine:
         """
         # Robustly check if the chat object is available before using it
         if self.dataframe is None or self.chat is None:
-            return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible. Por favor, sube un archivo CSV y asegúrate de que la clave API sea válida."}]
+            return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible. Por favor, sube un archivo CSV y asegúrate de que la clave API sea válida y el modelo se inicialice correctamente."}]
 
         # Prepare the prompt for the model
         # Include information about the dataframe (columns, types, sample rows)
