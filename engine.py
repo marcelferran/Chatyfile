@@ -1,69 +1,95 @@
-import io
-import contextlib
-import pandas as pd
-import matplotlib.pyplot as plt
-from io import BytesIO
 import google.generativeai as genai
+import streamlit as st
+import pandas as pd
+import json
+import os
+from config import get_gemini_api_key, MODEL_NAME
+from utils import parse_gemini_response # Import utility for parsing response
 
 class ChatEngine:
-    def __init__(self, df):
-        self.df = df
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
-        self.chat = self.model.start_chat(history=[
-            {
-                "role": "user",
-                "parts": [
-                    "Tienes un DataFrame llamado df. Estas son sus columnas: " + ", ".join(df.columns) + 
-                    ". No traduzcas ni modifiques los nombres. Usa pandas y matplotlib solamente."
-                ]
-            },
-            {
-                "role": "model",
-                "parts": ["Entendido. Usaré pandas y matplotlib respetando los nombres de columnas."]
-            }
-        ])
+    """
+    Manages the interaction with the Gemini model for CSV data analysis.
+    """
+    def __init__(self, dataframe: pd.DataFrame):
+        """
+        Initializes the ChatEngine with the dataframe and configures Gemini.
+        """
+        self.dataframe = dataframe
+        self._configure_gemini()
+        self._initialize_chat()
 
-    def process_question(self, pregunta):
+    def _configure_gemini(self):
+        """Configures the Gemini API with the retrieved key."""
+        api_key = get_gemini_api_key()
+        genai.configure(api_key=api_key)
+
+    def _initialize_chat(self):
+        """
+        Initializes the Gemini chat object.
+        Resets the chat history when a new engine is created (new file uploaded).
+        """
         try:
-            prompt = f"""
-Tienes un DataFrame de pandas llamado `df`.
-Estas son las columnas: {', '.join(self.df.columns)}.
-No cambies los nombres de columnas.
-Si haces un cálculo o selección de datos, asigna el resultado a una variable llamada `result`.
-Si haces una gráfica, usa matplotlib, crea una figura `fig, ax = plt.subplots()`.
-Devuelve solo el código Python que ejecuta la respuesta.
-Pregunta:
-{pregunta}
-"""
+            model = genai.GenerativeModel(MODEL_NAME)
+            # Start a new chat session, history is managed in Streamlit's session_state
+            # The model's internal history is reset here.
+            self.chat = model.start_chat(history=[])
+        except Exception as e:
+            st.error(f"Error al cargar el modelo {MODEL_NAME}: {e}")
+            self.chat = None # Ensure chat is None if model loading fails
+            st.stop() # Stop execution if the model cannot be loaded
+
+    def process_question(self, user_query: str):
+        """
+        Processes the user's question using the Gemini model and the loaded dataframe.
+        Returns a structured response (list of dictionaries) for display.
+        """
+        if self.dataframe is None or self.chat is None:
+            return [{"type": "text", "content": "No hay datos cargados o el motor de chat no está disponible."}]
+
+        # Prepare the prompt for the model
+        # Include information about the dataframe (columns, types, sample rows)
+        df_info = f"Columnas del CSV: {list(self.dataframe.columns)}\n"
+        df_info += f"Tipos de datos:\n{self.dataframe.dtypes.to_string()}\n" # Use to_string() for better formatting
+        # Use a smaller sample or summary for very large dataframes to keep prompt size manageable
+        df_info += f"Primeras 5 filas:\n{self.dataframe.head().to_markdown(index=False)}\n"
+
+        # Instructions for the model on how to respond
+        # Emphasize using the specified formats for tables and charts
+        instructions = """
+        Eres un asistente de chat amigable y útil experto en analizar datos CSV.
+        Responde a las preguntas del usuario basándote ÚNICAMENTE en los datos proporcionados en el archivo CSV.
+        Si la pregunta no se puede responder con los datos, díselo amablemente al usuario.
+        Puedes responder con texto, mostrar tablas o sugerir gráficos.
+        Para indicar una tabla, usa el siguiente formato EXACTO:
+        <TABLE>
+        {"data": [[valor1, valor2], [valor3, valor4]], "columns": ["Columna A", "Columna B"]}
+        </TABLE>
+        Asegúrate de que los datos de la tabla sean un subconjunto relevante y pequeño del dataframe, apropiado para mostrar.
+        Para indicar un gráfico, usa el siguiente formato EXACTO:
+        <CHART:tipo_de_grafico>
+        {"x": "nombre_columna_x", "y": "nombre_columna_y", "title": "Título del gráfico"}
+        </CHART>
+        Los tipos de gráfico soportados son: bar, line, scatter.
+        Asegúrate de que las columnas 'x' y 'y' existan en el dataframe y sean apropiadas para el tipo de gráfico (numéricas para y, categóricas o numéricas para x dependiendo del gráfico).
+        Combina texto, tablas y gráficos según sea necesario para responder completamente.
+        Para preguntas matemáticas o estadísticas, realiza los cálculos necesarios usando los datos y presenta el resultado en texto o tabla.
+        Si pides un gráfico, asegúrate de que las columnas 'x' y 'y' sean válidas y existan en el dataframe.
+        """
+
+        prompt = f"{instructions}\n\nDatos del CSV:\n{df_info}\n\nPregunta del usuario: {user_query}"
+
+        # Call the Gemini model
+        try:
+            # Send the message to the chat session
             response = self.chat.send_message(prompt)
-            code = response.text.strip("`python\n").strip("`").strip()
+            raw_response_text = response.text
 
-            exec_globals = {"df": self.df, "pd": pd, "plt": plt}
+            # Parse the raw response text into structured elements
+            structured_response = parse_gemini_response(raw_response_text, self.dataframe) # Pass dataframe for validation
 
-            buffer = io.StringIO()
-
-            with contextlib.redirect_stdout(buffer):
-                exec(code, exec_globals)
-
-            # Revisar si hay figura
-            if plt.get_fignums():
-                fig = plt.gcf()
-                img_buffer = BytesIO()
-                fig.savefig(img_buffer, format='png', bbox_inches='tight')
-                img_buffer.seek(0)
-                plt.close(fig)
-                return {"type": "plot", "content": img_buffer}
-
-            # Revisar si hay resultado tabular
-            if "result" in exec_globals and isinstance(exec_globals["result"], pd.DataFrame):
-                return {"type": "dataframe", "content": exec_globals["result"]}
-
-            # Revisar si hay texto impreso
-            output = buffer.getvalue()
-            if output.strip():
-                return {"type": "text", "content": output.strip()}
-
-            return {"type": "text", "content": "✅ Código ejecutado sin salida."}
+            return structured_response
 
         except Exception as e:
-            return {"type": "text", "content": f"❌ Error: {str(e)}"}
+            st.error(f"Error al comunicarse con el modelo Gemini: {e}")
+            return [{"type": "text", "content": f"Lo siento, hubo un error al procesar tu solicitud: {e}"}]
+
