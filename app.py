@@ -1,116 +1,124 @@
 import streamlit as st
 import pandas as pd
-from engine import start_new_chat # Import the chat engine
-from layout import ( # Import layout components
-    setup_page_config,
-    display_header,
-    file_uploader_section,
-    display_chat_history,
-    get_user_input,
-    display_sidebar_notes
-)
-from utils import handle_response, display_chat_elements # Import utility functions
+# Import components from your layout file
+from layout import setup_page_config, apply_custom_styles, show_header, show_footer
+# Import our engine and utils
+from engine import ChatEngine
+from utils import parse_gemini_response, display_message_content # Import utility functions
 
 # --- Application Setup ---
-setup_page_config()
-display_header()
+setup_page_config() # Set page config using layout function
+apply_custom_styles() # Apply custom CSS styles
 
-# --- File Upload and Data Loading ---
-# The file_uploader_section function now handles loading and storing in session_state
-file_uploader_section()
-dataframe = st.session_state.get('dataframe', None) # Retrieve dataframe from session state
+# --- Header ---
+show_header() # Display header using layout function
 
-# --- Initialize Chat ---
-# Initialize the chat object in session state if it doesn't exist
+# --- Initialize Session State ---
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "chat_engine" not in st.session_state:
+    st.session_state.chat_engine = None
+# Initialize chat object from engine if not exists
 if 'chat' not in st.session_state or st.session_state['chat'] is None:
-    st.session_state['chat'] = start_new_chat()
+     # ChatEngine will handle the initialization of the Gemini chat object internally
+     # We don't need a separate 'chat' key in session_state here anymore,
+     # as it's managed by the ChatEngine instance.
+     pass # ChatEngine will be created upon file upload
 
-# Initialize chat history in session state if it doesn't exist
-if 'chat_history' not in st.session_state:
-    st.session_state['chat_history'] = []
+# --- Sidebar for CSV Upload ---
+st.sidebar.header("📂 Cargar archivo CSV")
+uploaded_file = st.sidebar.file_uploader("Selecciona un archivo CSV", type=["csv"])
 
-# --- Display Chat History ---
-display_chat_history() # Use the layout function to display history
-
-# --- User Input and Model Interaction ---
-user_query = get_user_input() # Get user input from the layout function
-
-if user_query:
-    # Add user query to chat history
-    st.session_state['chat_history'].append({'role': 'user', 'content': [('text', user_query)]})
-
-    # Display user query immediately
-    with st.chat_message("user"):
-        st.write(user_query)
-
-    # Check if dataframe is loaded before interacting with the model
-    if dataframe is not None:
-        # Prepare prompt for the model
-        df_info = f"Columnas: {list(dataframe.columns)}\n"
-        df_info += f"Tipos de datos:\n{dataframe.dtypes}\n"
-        # Use a smaller sample or summary for very large dataframes to keep prompt size manageable
-        df_info += f"Primeras 5 filas:\n{dataframe.head().to_markdown(index=False)}\n"
-
-        # Instructions for the model (can be moved to config or a separate prompt file if it grows)
-        instructions = """
-        Eres un asistente de chat amigable y útil experto en analizar datos CSV.
-        Responde a las preguntas del usuario basándote ÚNICAMENTE en los datos proporcionados en el archivo CSV.
-        Si la pregunta no se puede responder con los datos, díselo amablemente al usuario.
-        Puedes responder con texto, mostrar tablas o sugerir gráficos.
-        Para indicar una tabla, usa el siguiente formato:
-        <TABLE>
-        {"data": [[valor1, valor2], [valor3, valor4]], "columns": ["Columna A", "Columna B"]}
-        </TABLE>
-        Asegúrate de que los datos de la tabla sean un subconjunto relevante del dataframe.
-        Para indicar un gráfico, usa el siguiente formato:
-        <CHART:tipo_de_grafico>
-        {"x": "nombre_columna_x", "y": "nombre_columna_y", "title": "Título del gráfico"}
-        </CHART>
-        Los tipos de gráfico soportados son: bar, line, scatter.
-        Asegúrate de que las columnas 'x' y 'y' existan en el dataframe y sean apropiadas para el tipo de gráfico.
-        Combina texto, tablas y gráficos según sea necesario para responder completamente.
-        Para preguntas matemáticas o estadísticas, realiza los cálculos necesarios usando los datos.
-        """
-
-        prompt = f"{instructions}\n\nDatos del CSV:\n{df_info}\n\nPregunta del usuario: {user_query}"
-
-        # Send message to Gemini model
-        try:
-            # Use the chat object from session state
-            chat_session = st.session_state.get('chat')
-            if chat_session:
-                response = chat_session.send_message(prompt)
-                response_text = response.text
-
-                # Process the response using the utility function
-                output_elements = handle_response(response_text, dataframe)
-
-                # Add assistant response to chat history
-                st.session_state['chat_history'].append({'role': 'assistant', 'content': output_elements})
-
-                # Display assistant response
-                with st.chat_message("assistant"):
-                    display_chat_elements(output_elements, dataframe) # Use utility function to display
-
-            else:
-                 st.error("Error: El objeto de chat no está inicializado.")
-                 st.session_state['chat_history'].append({'role': 'assistant', 'content': [('text', "Error interno: el chat no está listo.")]})
-                 with st.chat_message("assistant"):
-                      st.write("Error interno: el chat no está listo.")
-
-        except Exception as e:
-            st.error(f"Error al comunicarse con el modelo Gemini: {e}")
-            st.session_state['chat_history'].append({'role': 'assistant', 'content': [('text', f"Lo siento, hubo un error al procesar tu solicitud: {e}")]})
-            with st.chat_message("assistant"):
-                 st.write(f"Lo siento, hubo un error al procesar tu solicitud: {e}")
-
-    else:
-        # If no dataframe loaded, inform the user
-        st.warning("Por favor, sube un archivo CSV para empezar a chatear.")
-        st.session_state['chat_history'].append({'role': 'assistant', 'content': [('text', "Por favor, sube un archivo CSV para empezar a chatear.")]})
-        with st.chat_message("assistant"):
-             st.write("Por favor, sube un archivo CSV para empezar a chatear.")
+# Handle file upload
+if uploaded_file:
+    try:
+        df = pd.read_csv(uploaded_file)
+        # Initialize ChatEngine with the dataframe
+        st.session_state.chat_engine = ChatEngine(df)
+        st.session_state.history = []  # Reset history on new file upload
+        st.success(f"✅ Archivo '{uploaded_file.name}' cargado correctamente.")
+        # Add a welcome message from the assistant
+        if not st.session_state.history:
+             st.session_state.history.append({
+                 "role": "assistant",
+                 "type": "text",
+                 "content": "¡Hola! He cargado tu archivo CSV. ¿En qué puedo ayudarte hoy?"
+             })
+    except Exception as e:
+        st.error(f"Error al leer el archivo CSV: {e}")
+        st.session_state.chat_engine = None # Clear engine if file reading fails
+        st.session_state.history = [] # Clear history on error
 
 
-# --- Sidebar Notes ---
-display_sidebar_notes() # Display notes using the layout function
+# --- Function to display chat history ---
+def mostrar_historial():
+    """Displays the chat history using custom CSS classes."""
+    # Use a container to hold the chat messages for scrolling
+    chat_placeholder = st.container()
+    with chat_placeholder:
+        # Use the custom chat-container div
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        for mensaje in st.session_state.history:
+            role = mensaje["role"]
+            content_type = mensaje.get("type", "text") # Default to text if type is missing
+            content = mensaje["content"]
+
+            # Use custom chat-message divs based on role
+            message_class = "user-message" if role == "user" else "assistant-message"
+
+            # Display content based on type
+            if content_type == "text":
+                 st.markdown(f'<div class="chat-message {message_class}">{content}</div>', unsafe_allow_html=True)
+            elif content_type == "dataframe":
+                 # Display dataframe outside the custom message div for better rendering
+                 st.dataframe(content)
+            elif content_type == "plot":
+                 # Assuming 'content' for plot is image data or path
+                 # You might need to adjust this based on how your engine generates plots
+                 try:
+                     st.image(content, use_container_width=True)
+                 except Exception as e:
+                     st.warning(f"No se pudo mostrar el gráfico: {e}")
+                     st.markdown(f'<div class="chat-message assistant-message">No se pudo mostrar el gráfico.</div>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True) # Close chat-container div
+
+
+# --- Main Content Area ---
+# If a file is loaded, display chat history and input form
+if st.session_state.chat_engine is not None:
+    mostrar_historial()
+
+    # Input for new question using a form at the bottom
+    # Use a container for the input form to apply styling if needed
+    # The 'input-container' class from layout.py is intended for this
+    st.markdown('<div class="input-container">', unsafe_allow_html=True)
+    with st.form(key="input_form", clear_on_submit=True):
+        user_input = st.text_input("Escribe tu pregunta aquí...")
+        submitted = st.form_submit_button("Enviar")
+    st.markdown('</div>', unsafe_allow_html=True) # Close input-container div
+
+
+    if submitted and user_input.strip() != "":
+        # Add user query to history immediately
+        st.session_state.history.append({"role": "user", "content": user_input})
+
+        with st.spinner('⏳ Pensando la respuesta...'):
+            # Process the question using the ChatEngine
+            # The engine will use Gemini and return structured response
+            respuesta_estructurada = st.session_state.chat_engine.process_question(user_input)
+
+        # Add assistant response to history
+        # respuesta_estructurada is expected to be a list of {"type": ..., "content": ...}
+        st.session_state.history.append({"role": "assistant", "content": respuesta_estructurada}) # Store as a list of elements
+
+        # Rerun the app to display the updated history
+        st.rerun() # Use st.rerun() to refresh and show new messages
+
+else:
+    # Display message if no file is loaded
+    st.info("📂 Por favor carga un archivo CSV para comenzar.")
+
+# --- Footer ---
+show_footer() # Display footer using layout function
+
