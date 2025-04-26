@@ -18,23 +18,28 @@ class ChatEngine:
         # Initialize self.chat to None by default
         self.chat = None
         self._configure_gemini()
-        self._initialize_chat() # Call initialization after configuration
+        # Call initialization only if configuration was successful (api_key was found)
+        if genai.api_key: # Check if the API key is set after configuration
+             self._initialize_chat() # Call initialization after configuration
+
 
     def _configure_gemini(self):
         """Configures the Gemini API with the retrieved key."""
         api_key = get_gemini_api_key()
         if not api_key:
              # get_gemini_api_key already handles st.error and st.stop
-             # If key is missing, the app should stop, but we set self.chat to None defensively
-             self.chat = None
+             # If key is missing, the app should stop, but we set genai.api_key to None defensively
+             genai.api_key = None # Set the global API key to None if not found
+             self.chat = None # Ensure chat is None
              return
         try:
             genai.configure(api_key=api_key)
-            # If configuration is successful, self.chat remains None for now,
-            # it will be initialized in _initialize_chat
+            # If configuration is successful, genai.api_key is set.
+            # self.chat will be initialized in _initialize_chat if genai.api_key is not None.
         except Exception as e:
             print(f"Error configuring Gemini API: {e}") # Print to console for debugging
             st.error(f"Error al configurar la API de Gemini: {e}")
+            genai.api_key = None # Ensure global API key is None on error
             self.chat = None # Ensure chat is None if configuration fails
 
 
@@ -42,22 +47,19 @@ class ChatEngine:
         """
         Initializes the Gemini chat object.
         Ensures self.chat is assigned a value (chat object or None).
+        This function is only called if genai.api_key is set.
         """
-        # Remove the problematic check 'if self.chat is not None:'
-        # Always attempt to initialize the chat model
-        if genai.get_client(): # Check if genai is configured
-            try:
-                model = genai.GenerativeModel(MODEL_NAME)
-                # Start a new chat session. The model's internal history is reset here.
-                self.chat = model.start_chat(history=[])
-            except Exception as e:
-                # Catch any errors during model loading or chat start
-                print(f"Error initializing Gemini model or chat: {e}") # Print to console for debugging
-                st.error(f"Error al inicializar el modelo Gemini o el chat: {e}")
-                self.chat = None # Ensure chat is None if initialization fails
-        else:
-            # genai was not configured, likely due to missing API key
-            self.chat = None
+        # Removed the problematic check 'if genai.get_client():'
+        # If we reach here, genai.api_key should be set.
+        try:
+            model = genai.GenerativeModel(MODEL_NAME)
+            # Start a new chat session. The model's internal history is reset here.
+            self.chat = model.start_chat(history=[])
+        except Exception as e:
+            # Catch any errors during model loading or chat start
+            print(f"Error initializing Gemini model or chat: {e}") # Print to console for debugging
+            st.error(f"Error al inicializar el modelo Gemini o el chat: {e}")
+            self.chat = None # Ensure chat is None if initialization fails
 
 
     def process_question(self, user_query: str):
