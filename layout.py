@@ -7,8 +7,12 @@ def setup_page_config():
     st.set_page_config(page_title="Chat con tu CSV", layout="wide")
 
     # Inject custom CSS for styling
-    # Targeting Streamlit's internal classes for layout and styling.
-    # Note: These class names might change in future Streamlit versions.
+    # IMPORTANT: Streamlit's internal class names can change.
+    # If the styling doesn't apply, use your browser's developer tools (F12)
+    # to inspect the elements you want to style (like the main content block,
+    # the file uploader button, chat messages, etc.) and find their current
+    # CSS class names. Replace the example class names below with the actual ones.
+
     st.markdown("""
         <style>
         /* General body and app container styling */
@@ -31,7 +35,8 @@ def setup_page_config():
 
         /* Main content container styling */
         /* This targets the primary block container where most content resides */
-        .st-emotion-cache-1cypcdb { /* This class name is an example and might need verification */
+        /* REPLACE '.st-emotion-cache-1cypcdb' with the actual class name found via F12 if needed */
+        .css-1cypcdb { /* Adjusted example class name */
             max-width: 800px; /* Limit width for centering */
             margin-left: auto;
             margin-right: auto;
@@ -45,7 +50,8 @@ def setup_page_config():
 
         /* Specific styling for the file uploader button */
         /* Targeting the button-like part of the file uploader */
-        .st-emotion-cache-19rxjxo.ef3psqc11 > div > button { /* Example selector - may change */
+        /* REPLACE '.st-emotion-cache-19rxjxo.ef3psqc11 > div > button' with the actual selector found via F12 if needed */
+        .css-19rxjxo.ef3psqc11 > div > button { /* Adjusted example selector */
             background-color: #0077b5; /* LinkedIn Blue */
             color: white;
             border-radius: 8px; /* Rounded corners */
@@ -58,7 +64,7 @@ def setup_page_config():
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .st-emotion-cache-19rxjxo.ef3psqc11 > div > button:hover {
+        .css-19rxjxo.ef3psqc11 > div > button:hover {
             background-color: #005582; /* Darker blue on hover */
             transform: translateY(-2px); /* Slight lift effect */
         }
@@ -134,7 +140,8 @@ def setup_page_config():
         .stChatMessage .dataframe tr:nth-child(even){background-color: #f2f2f2;}
 
         /* Styling for chat input */
-        .st-emotion-cache-1cypcdb .stTextInput > div > div > input {
+        /* REPLACE '.st-emotion-cache-1cypcdb .stTextInput > div > div > input' with the actual selector if needed */
+        .css-1cypcdb .stTextInput > div > div > input { /* Adjusted example selector */
              border-radius: 8px; /* Rounded corners */
              border: 1px solid #ced4da;
              padding: 0.75rem 1rem;
@@ -142,14 +149,15 @@ def setup_page_config():
              transition: border-color 0.2s ease;
         }
 
-        .st-emotion-cache-1cypcdb .stTextInput > div > div > input:focus {
+        .css-1cypcdb .stTextInput > div > div > input:focus {
              border-color: #0077b5; /* LinkedIn Blue on focus */
              outline: none; /* Remove default outline */
              box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 0.2rem rgba(0, 119, 181, 0.25);
         }
 
         /* Adjust chat input container padding */
-        .st-emotion-cache-1cypcdb .st-emotion-cache-1gh52kc { /* Example class for chat input container */
+        /* REPLACE '.st-emotion-cache-1cypcdb .st-emotion-cache-1gh52kc' with the actual selector if needed */
+        .css-1cypcdb .css-1gh52kc { /* Adjusted example class for chat input container */
             padding-bottom: 1rem; /* Add padding below the input */
         }
 
