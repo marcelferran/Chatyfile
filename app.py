@@ -61,7 +61,6 @@ def mostrar_historial():
                  # If somehow content is not a list (e.g., old format), wrap it
                  content_elements = [{"type": mensaje.get("type", "text"), "content": content_elements}]
 
-
             # Display content based on type
             # Note: We are now iterating through elements within a message
             # User messages are simple text, Assistant messages can be structured
@@ -134,21 +133,38 @@ if st.session_state.chat_engine is not None:
         submitted = st.form_submit_button("Enviar")
     st.markdown('</div>', unsafe_allow_html=True) # Close input-container div
 
+    # --- DEBUGGING IN APP.PY ---
+    st.write(f"DEBUG: Form submitted: {submitted}")
+    st.write(f"DEBUG: User input: '{user_input}'")
+    st.write(f"DEBUG: User input is not empty: {user_input.strip() != ''}")
+    st.write(f"DEBUG: Condition submitted and user_input.strip() != '': {submitted and user_input.strip() != ''}")
+    # --- END DEBUGGING IN APP.PY ---
+
 
     if submitted and user_input.strip() != "":
+        st.write("DEBUG: Inside submitted and not empty condition.") # Debug line
         # Add user query to history immediately
         # Store user message as a list of text elements for consistency
         st.session_state.history.append({"role": "user", "content": [{"type": "text", "content": user_input}]})
 
+        st.write("DEBUG: User query added to history.") # Debug line
 
         with st.spinner('⏳ Pensando la respuesta...'):
+            st.write("DEBUG: Calling process_question...") # Debug line
             # Process the question using the ChatEngine
             # The engine will use Gemini and return structured response
             respuesta_estructurada = st.session_state.chat_engine.process_question(user_input)
+            st.write("DEBUG: process_question returned.") # Debug line
+            st.write("DEBUG: Returned structured response:") # Debug line
+            st.write(respuesta_estructurada) # Debug line
+
 
         # Add assistant response to history
         # respuesta_estructurada is expected to be a list of {"type": ..., "content": ...}
         st.session_state.history.append({"role": "assistant", "content": respuesta_estructurada}) # Store as a list of elements
+
+        st.write("DEBUG: Assistant response added to history.") # Debug line
+
 
         # Rerun the app to display the updated history
         st.rerun() # UNCOMMENTED to refresh the UI
