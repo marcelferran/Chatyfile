@@ -63,6 +63,7 @@ def mostrar_historial():
                  content_elements = [{"type": mensaje.get("type", "text"), "content": content_elements}]
 
             # --- DEBUGGING OUTPUT ---
+            # Keep debug lines here to see what's in the history
             if role == "assistant":
                  st.write(f"DEBUG: Mensaje Asistente {i}:")
                  st.write(content_elements)
@@ -157,7 +158,7 @@ if st.session_state.chat_engine is not None:
         st.session_state.history.append({"role": "assistant", "content": respuesta_estructurada}) # Store as a list of elements
 
         # Rerun the app to display the updated history
-        st.rerun() # Use st.rerun() to refresh and show new messages
+        # st.rerun() # COMMENTED OUT TEMPORARILY FOR DEBUGGING
 
 else:
     # Display message if no file is loaded
