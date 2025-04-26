@@ -1,6 +1,6 @@
 import streamlit as st
 
-def apply_custom_styles():
+def setup_page_config():
     st.markdown("""
         <style>
             .stApp {
