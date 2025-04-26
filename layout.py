@@ -7,11 +7,16 @@ def setup_page_config():
     st.set_page_config(page_title="Chat con tu CSV", layout="wide")
 
     # Inject custom CSS for styling
-    # Using the CSS block provided by the user.
-    # If styling still doesn't apply, the CSS class names below
-    # might not match the ones in your specific Streamlit environment.
-    # Use browser developer tools (F12) to inspect elements and
-    # replace the class names in this CSS block if needed.
+    # IMPORTANT: Streamlit's internal class names can change frequently.
+    # If the styling doesn't apply as expected, you MUST use your browser's
+    # developer tools (F12) to inspect the HTML elements on your running
+    # Streamlit app. Find the exact CSS class names for:
+    # 1. The main content block (UPDATED based on user's F12 inspection).
+    # 2. The file uploader button (UPDATED based on user's F12 inspection).
+    # 3. The chat messages (user and assistant).
+    # 4. The chat input box (UPDATED based on user's F12 inspection).
+    # Then, REPLACE the example class names in the CSS selectors below
+    # with the actual class names you find.
 
     st.markdown("""
         <style>
@@ -35,7 +40,8 @@ def setup_page_config():
 
         /* Main content container styling */
         /* This targets the primary block container where most content resides */
-        .css-1cypcdb { /* EXAMPLE CLASS NAME - FIND THE REAL ONE WITH F12 IF NEEDED */
+        /* Selector updated based on user's F12 inspection */
+        .st-emotion-cache-b499ls {
             max-width: 800px; /* Limit width for centering */
             margin-left: auto;
             margin-right: auto;
@@ -49,7 +55,8 @@ def setup_page_config():
 
         /* Specific styling for the file uploader button */
         /* Targeting the button-like part of the file uploader */
-        .css-19rxjxo.ef3psqc11 > div > button { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 IF NEEDED */
+        /* Selector updated based on user's F12 inspection */
+        .st-emotion-cache-ocsh0s { /* Using the confirmed class from the HTML snippet */
             background-color: #0077b5; /* LinkedIn Blue */
             color: white;
             border-radius: 8px; /* Rounded corners */
@@ -62,7 +69,7 @@ def setup_page_config():
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .css-19rxjxo.ef3psqc11 > div > button:hover {
+        .st-emotion-cache-ocsh0s:hover {
             background-color: #005582; /* Darker blue on hover */
             transform: translateY(-2px); /* Slight lift effect */
         }
@@ -89,7 +96,8 @@ def setup_page_config():
 
         /* Styling for chat messages */
         /* The data-testid selector is more stable, but check if .stChatMessage itself is correct */
-        .stChatMessage { /* Check if this base class is correct */
+        /* *** VERIFY/REPLACE '.stChatMessage' BELOW with the actual base class if needed, and check the data-testid selectors *** */
+        .stChatMessage { /* Check if this base class is correct with F12 */
             background-color: #e9ecef; /* Light gray for messages */
             border-radius: 10px; /* Rounded corners */
             padding: 1rem;
@@ -139,8 +147,8 @@ def setup_page_config():
         .stChatMessage .dataframe tr:nth-child(even){background-color: #f2f2f2;}
 
         /* Styling for chat input */
-        /* *** REPLACE '.css-1cypcdb .stTextInput > div > div > input' BELOW with the actual selector for the chat input *** */
-        .css-1cypcdb .stTextInput > div > div > input { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 IF NEEDED */
+        /* Selector updated based on user's F12 inspection */
+        [data-testid="stChatInputTextArea"] { /* Targeting the textarea directly by data-testid */
              border-radius: 8px; /* Rounded corners */
              border: 1px solid #ced4da;
              padding: 0.75rem 1rem;
@@ -148,17 +156,24 @@ def setup_page_config():
              transition: border-color 0.2s ease;
         }
 
-        .css-1cypcdb .stTextInput > div > div > input:focus {
+        [data-testid="stChatInputTextArea"]:focus {
              border-color: #0077b5; /* LinkedIn Blue on focus */
              outline: none; /* Remove default outline */
              box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 0.2rem rgba(0, 119, 181, 0.25);
         }
 
-        /* Adjust chat input container padding */
-        /* *** REPLACE '.css-1cypcdb .css-1gh52kc' BELOW with the actual selector for the chat input container if needed *** */
-        .css-1cypcdb .css-1gh52kc { /* EXAMPLE SELECTOR - FIND THE REAL ONE WITH F12 IF NEEDED */
-            padding-bottom: 1rem; /* Add padding below the input */
+        /* Styling for the chat input container for padding/margins */
+        /* Targeting the specific chat input container class */
+        .st-emotion-cache-1eeryuo { /* Using the confirmed class from the HTML snippet */
+             padding-bottom: 1rem; /* Add padding below the input */
+             /* Add other container styles here if needed, e.g., background, border */
         }
+
+        /* Styling for the chat input submit button */
+         [data-testid="stChatInputSubmitButton"] { /* Targeting the button directly by data-testid */
+             color: #0077b5; /* LinkedIn Blue for the send icon */
+             /* Add other button styles here if needed */
+         }
 
 
         </style>
