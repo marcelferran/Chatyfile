@@ -35,7 +35,7 @@ def parse_gemini_response(response_text: str, df: pd.DataFrame):
             except json.JSONDecodeError:
                 output_elements.append({'type': 'text', 'content': "Error al procesar los datos de la tabla (JSON inválido)."})
             except Exception as e:
-                 output_elements.append({'type': 'text', 'content': f"Error al crear la tabla: {e}"})
+                 output_elements.append({'type': 'text', 'content': f"Error al crear la tabla: {e}."})
 
         elif part.startswith('CHART:'):
             # Es un gráfico
@@ -48,19 +48,14 @@ def parse_gemini_response(response_text: str, df: pd.DataFrame):
                     # Validar la estructura básica del JSON de gráfico
                     if isinstance(chart_data, dict) and 'x' in chart_data and 'y' in chart_data:
                          # Validar que las columnas existan en el dataframe original
-                         if df is not None and chart_data['x'] in df.columns and chart_data['y'] in df.columns:
-                             # Append chart specification. Plotting happens in the display function.
-                             output_elements.append({'type': 'plot', 'content': {'type': chart_type, 'data': chart_data}})
-                         elif df is None:
-                              output_elements.append({'type': 'text', 'content': "Error: No hay datos cargados para generar el gráfico."})
-                         else:
-                              output_elements.append({'type': 'text', 'content': f"Error: Columnas '{chart_data['x']}' o '{chart_data['y']}' no encontradas en los datos para el gráfico."})
+                         # Note: Validation against df happens in app.py before plotting
+                         output_elements.append({'type': 'plot', 'content': {'type': chart_type, 'data': chart_data}})
                     else:
                          output_elements.append({'type': 'text', 'content': "Error: Formato de datos de gráfico inválido (faltan 'x' o 'y')."})
                 except json.JSONDecodeError:
                     output_elements.append({'type': 'text', 'content': "Error al procesar los datos del gráfico (JSON inválido)."})
                 except Exception as e:
-                     output_elements.append({'type': 'text', 'content': f"Error al procesar el gráfico: {e}"})
+                     output_elements.append({'type': 'text', 'content': f"Error al procesar el gráfico: {e}."})
             else:
                  output_elements.append({'type': 'text', 'content': "Formato de gráfico inválido."})
         else:
@@ -77,9 +72,7 @@ def parse_gemini_response(response_text: str, df: pd.DataFrame):
 
     return output_elements
 
-# This function is not strictly needed anymore as app.py's mostrar_historial
-# handles the display logic using the structured response from parse_gemini_response.
-# Keeping it as a placeholder or if you decide to refactor display logic here later.
+# The display_message_content function is no longer needed as display logic is in app.py
 # def display_message_content(message_element, df):
 #     """Displays a single message element (text, dataframe, plot)."""
 #     element_type = message_element['type']
