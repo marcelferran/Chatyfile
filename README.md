@@ -1,96 +1,57 @@
-Chatyfile
+# CSV Chat App
 
-Chatyfile es un asistente inteligente que te ayuda a interactuar con archivos CSV usando lenguaje natural.
-Basado en Gemini 2.0 Flash de Google y construido con Streamlit, permite hacer preguntas sobre tus datos, obtener respuestas, filtrar información y generar gráficos automáticamente.
+This is a Streamlit application that allows you to upload a CSV file and chat with your data using the Gemini 2.0 Flash model.
 
+## Files
 
+- `app.py`: The main application file that orchestrates the different components.
+- `engine.py`: Handles the interaction with the Gemini API and model.
+- `utils.py`: Contains utility functions, such as processing the model's response.
+- `layout.py`: Defines the Streamlit UI elements and layout.
+- `config.py`: Stores configuration variables and handles API key retrieval.
+- `requirements.txt`: Lists the necessary Python packages.
+- `readme.md`: This file.
 
-Características
-*Carga de archivos CSV de manera sencilla.
+## Setup
 
-*Asistente de datos usando Gemini 2.0 Flash.
+1.  **Clone the repository** (or create these files manually).
+2.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Get a Gemini API Key:**
+    - Go to [Google AI Studio](https://makersuite.google.com/).
+    - Create an API key.
+4.  **Configure your API Key:**
+    - **Option 1 (Environment Variable):** Set the `GEMINI_API_KEY` environment variable with your API key.
+      ```bash
+      export GEMINI_API_KEY='YOUR_API_KEY'
+      ```
+      (Replace `YOUR_API_KEY` with your actual key)
+    - **Option 2 (Streamlit Cloud Secrets):** If deploying to Streamlit Cloud, create a `.streamlit` folder and inside it, a `secrets.toml` file. Add your API key like this:
+      ```toml
+      GEMINI_API_KEY="YOUR_API_KEY"
+      ```
+      (Replace `YOUR_API_KEY` with your actual key)
 
-*Generación automática de tablas y gráficos (usando pandas y matplotlib).
+## Running the Application
 
-*Indicador de procesamiento ("Pensando la respuesta...").
+1.  Open your terminal in the directory where the files are saved.
+2.  Run the Streamlit application:
+    ```bash
+    streamlit run app.py
+    ```
+3.  Your web browser will open with the application.
 
-*Historial de chat con scroll y diseño moderno.
+## Usage
 
-*Interfaz responsiva y estética en tonos azul, gris y blanco.
+1.  Upload your CSV file using the file uploader.
+2.  Once the file is loaded, a preview will be shown.
+3.  Use the chat input box at the bottom to ask questions about your data.
+4.  The AI will respond with text, tables, or basic charts based on the data.
 
-*Sin uso de librerías externas como Plotly o Seaborn.
+## Extending
 
-
-
-Tecnologías utilizadas
-*Python 3.9+
-
-*Streamlit 1.38.0+
-
-*Google Generative AI (google-generativeai)
-
-*Pandas
-
-*Matplotlib
-
-
-
-Instalación local
-Clonar el repositorio:
-git clone https://github.com/tu_usuario/chatyfile.git
-cd chatyfile
-
-
-
-Instalar las dependencias
-pip install -r requirements.txt
-
-
-
-Configurar la API KEY de Google Generative AI:
-Crear un archivo .streamlit/secrets.toml en la raíz del proyecto con el siguiente contenido:
-GOOGLE_API_KEY = "tu_clave_api"
-Nota: Puedes obtener tu API Key gratuita en Google AI Studio: https://makersuite.google.com/app/apikey
-
-
-
-Ejecutar la aplicación
-streamlit run app.py
-
-
-
-Despliegue en Streamlit Cloud
-Crear un nuevo repositorio en GitHub y subir todos los archivos (app.py, engine.py, layout.py, utils.py, config.py, requirements.txt, etc).
-Conectar la cuenta en Streamlit Cloud: https://streamlit.io/cloud
-Desplegar la aplicación seleccionando el repositorio.
-
-
-
-Configurar los Secrets en Streamlit Cloud
-Settings > Secrets:
-GOOGLE_API_KEY = "tu_clave_api"
-Ejecutar y utilizar la aplicación en la nube.
-
-
-
-Cómo usar Chatyfile
-Subir un archivo CSV.
-Realizar preguntas en lenguaje natural, ejemplos:
-  "¿Cuántos proveedores de Urea hay?"
-  "Muestra las primeras 5 filas"
-  "Haz un gráfico de pastel con el porcentaje de ventas del top 5 de proveedores"
-Visualizar las respuestas como texto, tablas interactivas o gráficos.
-
-
-
-Desarrollado por
-Marcel Ferran Castro Ponce de Leon
-https://www.linkedin.com/in/marcelcastroponcedeleon/
-https://github.com/marcelferran
-WiseJourney Branding
-
-
-
-Licencia
-Este proyecto está protegido por derechos de autor © 2025 Chatyfile.
-Todos los derechos reservados. Uso interno o educativo permitido bajo solicitud.
+- You can modify `layout.py` to change the application's appearance.
+- Enhance `utils.py` to handle more complex response formats or generate different types of charts (e.g., using Altair or Plotly).
+- Refine the instructions in `app.py` (or move them to a separate file) to guide the AI's responses more effectively.
