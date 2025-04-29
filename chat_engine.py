@@ -73,6 +73,7 @@ Instrucciones:
 - Usa la columna 'mes' para agrupaciones mensuales y 'año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
 - Para preguntas que hablen sobre proveedores filtra la columna 'proveedor'
+- Para preguntas que hablen sobre servicios filtra la columna 'tipo' == servicio
 
 Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas"
