@@ -73,7 +73,7 @@ def apply_custom_styles():
 def show_welcome_message():
     st.markdown("""
         <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
-        <p style='text-align: center;'>Sube tu archivo y haz preguntas sobre tus datos</p>
+        <p style='text-align: center;'>Sube tu archivo y preguntame sobre tus datos</p>
     """, unsafe_allow_html=True)
 
 # Función para el cargador de archivo en el sidebar
