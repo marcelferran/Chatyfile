@@ -69,7 +69,7 @@ Instrucciones:
 - Para intersecciones (por ejemplo, 'proveedores en refacciones y servicios'), usa .isin() y devuelve un DataFrame.
 - Para conteos de múltiples categorías (por ejemplo, 'proveedores de refacciones y servicios'), crea un DataFrame con una columna para la categoría y otra para el total.
 - Para gráficos, usa matplotlib (plt.figure(figsize=(8, 6), dpi=100), plt.pie(), plt.bar(), etc.), incluye etiquetas y porcentajes si es necesario, y escribe None como la última línea. No modifiques el tamaño de la figura; usa siempre figsize=(8, 6) y dpi=100 para todas las gráficas en Streamlit. Para gráficas de barras que comparan años, alinea los datos con reindex para manejar meses faltantes, rellenando con ceros.
-- Usa la columna 'tipo' para filtros de categorías como 'refacciones' o 'servicio'.
+- Usa siempre la columna 'tipo' para filtros de categorías como 'refacciones' o 'servicios'.
 - Usa la columna 'mes' para agrupaciones mensuales y 'año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
 - Para preguntas que hablen sobre proveedores filtra la columna 'proveedor'
