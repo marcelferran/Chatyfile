@@ -63,7 +63,7 @@ Instrucciones:
 - Verifica siempre que tu codigo lleve df para el dataframe evitando que escribas solamente d o f.
 - Para tablas o datos calculados, siempre devuelve un DataFrame usando pd.DataFrame, .reset_index(), o métodos equivalentes.
 - Para conteos (por ejemplo, 'cuántos proveedores'), usa .nunique() o .count() y devuelve el resultado en un DataFrame.
-- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame. Usa la columna 'Cantidad' para sumas de compras, a menos que se especifique otra columna.
+- Para sumas (por ejemplo, 'total comprado'), usa .sum() y devuelve un DataFrame. Usa la columna 'unidades' para sumas de compras, a menos que se especifique otra columna.
 - Para búsquedas de productos como 'barita', usa .str.contains('barita', case=False, na=False).
 - Para listas con valores asociados (por ejemplo, 'lista de proveedores y monto'), usa .groupby() y .sum() para crear un DataFrame.
 - Para intersecciones (por ejemplo, 'proveedores en refacciones y servicios'), usa .isin() y devuelve un DataFrame.
@@ -72,6 +72,7 @@ Instrucciones:
 - Usa la columna 'tipo' para filtros de categorías como 'refacciones' o 'servicio'.
 - Usa la columna 'mes' para agrupaciones mensuales y 'año' para filtros de años.
 - Usa las columnas exactas del DataFrame proporcionadas.
+- Para preguntas que hablen sobre proveedores filtra la columna 'proveedor'
 
 Ejemplos:
 - Pregunta: "Muestra las primeras 5 filas"
