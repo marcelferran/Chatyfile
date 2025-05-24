@@ -7,7 +7,6 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import google.generativeai as genai
 
-
 # Función para iniciar el chat
 def iniciar_chat(df):
     model = genai.GenerativeModel('gemini-2.0-flash')
