@@ -1,6 +1,6 @@
 # Chatyfile
 
-This is a Streamlit application that allows you to upload a CSV file and chat with your data using the Gemini 2.0 Flash model, with a custom layout.
+This is a Streamlit application, that allows you to upload a CSV file and chat with your data using the Gemini 2.0 Flash model, with a custom layout.
 
 ## Files
 
