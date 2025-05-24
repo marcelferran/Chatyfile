@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from config import configure_genai
 from utils import mostrar_resumen_df
