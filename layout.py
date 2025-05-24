@@ -69,7 +69,7 @@ def apply_custom_styles():
         </style>
     """, unsafe_allow_html=True)
 
-# Función para mostrar mensaje de bienvenida
+# Función para mostrar mensaje de bienvenida de la app
 def show_welcome_message():
     st.markdown("""
         <h3 style='text-align: center; color: #1f77b4;'>¡Bienvenido a Chatyfile!</h3>
